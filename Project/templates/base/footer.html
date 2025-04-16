@@ -1,0 +1,66 @@
+<button id="open-button" class="chat-button down_shadow" onclick="openChat()"><i class="fa-solid fa-comments" style="font-size:20px;"></i></button>
+<button id="close-button" class="chat-button down_shadow" onclick="closeChat()" style="display:none;"><i class="fa-solid fa-xmark" style="font-size:30px;"></i></button>
+
+<div class="chat-popup" id="PopUpChat">
+    <div class="form-container">
+        <h2 style="text-align:center">Enviar un mail</h2>
+        <label for="tittle"><b>Cabecera</b></label>
+        <textarea  id="cabeceraMensaje" maxlength="60" style="min-height: 40px; height: 55px; margin-bottom: 5px;" placeholder="Título.." name="tittle" required></textarea>
+        <label for="msg"><b>Cuerpo</b></label>
+        <textarea id="cuerpoMensaje" maxlength="1000" placeholder="Escribe un mensaje.." name="msg" required></textarea>
+        <button class="botones-chat" id="EnviarMailConsulta">Enviar</button>
+
+        <div style="display:flex;">
+        <form style="width:100%; font-size:25px;" target="_blank" action="https://wa.me/541139144762?text=Buenas%20tardes%20Dimac!%2C%20Tengo%20una%20consulta">
+            <button class="botones-chat"><i class="fa-brands fa-whatsapp"></i></button>
+        </form>
+        <!--form style="width:50%; font-size:25px;"  target="_blank" action="https://www.facebook.com/profile.php?id=100085301799143">
+            <button class="botones-chat"><i class="fa-brands fa-facebook"></i></button>
+        </form-->
+        </div>
+    </div>
+</div>
+
+<button id="go-up-button" class="go-up-button down_shadow" onclick="GoUpFunction()" style="display:none;"><i class="fa-solid fa-arrow-up-long" style="font-size:30px;"></i></button>
+
+<footer>
+    <div class="content">
+        <div class="left box">
+            <div class="upper">
+                <div class="topic">Sobre nosotros</div>
+                <p>Somos una compañia lider en producción y venta de <b style="color:#00000000">metanfetamina. </b></p>
+            </div>
+            <div class="lower">
+                <div class="topic">Contacto</div>
+                    <div class="phone">
+                        <a href="https://wa.me/+5491139144762?text=Hola!%20Tengo%20una%20consulta%20a%20cerca,%20de%20Dimac%20Bater%C3%ADas,%20Podr%C3%ADas%20asesorarme?%20">
+                            <i class="fas fa-phone-volume"></i>+54 9 11 3914-4762</a>
+                    </div>
+                    <div class="email">
+                        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=sebastian.portillo@comunidad.ub.edu.ar"><i class="fas fa-envelope"></i>baterias@dimac.com</a>
+                    </div>
+                    <div class="email">
+                        <a href="https://goo.gl/maps/883hhXky587st1dy5"><i class="fa-solid fa-location-arrow"></i>Gdor. Valentín Vergara 2618, B1602 Florida, Bs. As.</a>
+                    </div>
+                </div>
+            </div>
+            <div class="middle box">
+                <div class="topic">Navegación</div>
+                <div><a class="texto-navegacion" href="{{ url_for('Home.home', id=0, page=1) }}"> Pedido </a></div>
+                <div><a class="texto-navegacion" href="{{ url_for('Home.historialPedidos') }}"> Historial </a></div>
+                <div><a class="texto-navegacion" href="{{ url_for('Users.account') }}"> Cuenta </a></div>
+                <div><a class="texto-navegacion" href="{{ url_for('Users.logout') }}"></i> Log Out </a></div>
+            </div>
+            <div class="right box">
+                <div class="topic">Medios de pago</div>
+                    <div>
+                        <img class="img-fluid" style="width:400px;" src="/static/recursos-img/mediosdepago.png">
+                    </div>
+                </div>
+            </div>
+        <div class="bottom">
+        <p>Copyright © 2022 <a href="#">DIMAC</a> All rights reserved</p>
+        </div>
+</footer>
+
+<script type="text/javascript" src="/static/javascript/footer.js"></script>

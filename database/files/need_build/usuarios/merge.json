@@ -1,0 +1,11 @@
+{
+    "usuarios": [
+        {
+            "nombre": "Gianluca",
+            "apellido": "Zinni",
+            "birthday": "2001-08-23",
+            "dni": "42886236",
+            "id_tipousuario": 1
+        }
+    ]
+}

@@ -1,0 +1,82 @@
+{% include "base/layout.html" %} {% include "base/navbar.html" %} {% block onecontent %}
+
+<div class="container mt-4">
+  <h3>📋 Crear o Editar una Parcela</h3>
+
+  <form method="POST" action="{{ url_for('config.parcela') }}" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="row">
+      <!-- Select campo -->
+      <label for="campo_selector" class="form-label">Seleccionar campo</label>
+      <div class="col-md-8 mb-3">
+        <select id="campo_selector" name="campo_id" class="form-select" required>
+          {% if coordenadas_por_campo|length == 1 %}
+            {% for id, coord in coordenadas_por_campo.items() %}
+              <option value="{{ id }}" selected>{{ coord.nombre }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="" disabled selected>-- Seleccionar campo --</option>
+            {% for id, coord in coordenadas_por_campo.items() %}
+              <option value="{{ id }}">{{ coord.nombre }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <div class="col-md-4 mb-3">
+        <a href="{{ url_for('config.campo') }}" class="btn btn-dark">
+          Editar Campo <i class="fa-solid fa-map-pin" style="font-size:15px"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Select parcela -->
+    <div class="mb-3">
+      <label for="parcela_selector" class="form-label">Seleccionar parcela</label>
+      <select id="parcela_selector" class="form-select">
+        <option value="">-- Crear nueva parcela --</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.nombre_parcela.label(class="form-label") }}
+        {{ form.nombre_parcela(id="parcela-nombre", class="form-control") }}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.descripcion_parcela.label(class="form-label") }}
+        {{ form.descripcion_parcela(id="parcela-descripcion", class="form-control") }}
+      </div>
+    </div>
+
+    <input type="hidden" id="perimetro_geojson" name="perimetro_geojson" />
+    <input type="hidden" id="parcela_id" name="parcela_id" />
+
+    <label class="form-label">📍 Ubicación del campo</label>
+    <div id="map" style="height: 400px;" class="mb-3"></div>
+
+    <div class="text-end">
+      <button type="submit" class="btn btn-dark">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.13.0/dist/leaflet-geoman.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.13.0/dist/leaflet-geoman.min.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<!-- Datos para JS -->
+<script>
+  window.COORDENADAS_CAMPO = {{ coordenadas_por_campo | tojson }};
+  window.PARCELAS_CAMPO = {{ parcelas_por_campo | tojson }};
+  window.INIT_LAT = {{ center_lat }};
+  window.INIT_LON = {{ center_lon }};
+</script>
+
+<script type="module" src="{{ url_for('static', filename='js/parcela.view.js') }}"></script>
+
+{% endblock %}

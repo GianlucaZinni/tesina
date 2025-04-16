@@ -1,0 +1,12 @@
+itsdangerous
+flask==2.2.5
+Flask-Login
+Flask-SQLAlchemy
+Pillow
+Werkzeug==2.2.2
+WTForms
+pandas
+mysql-connector-python
+pymysql
+Flask-WTF
+cryptography

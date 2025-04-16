@@ -1,0 +1,151 @@
+{% include "base/layout.html" %} {% include "base/navbar.html" %} {% block onecontent %}
+
+<div class="container mt-4">
+  <form method="POST" action="{{ url_for('config.usuario') }}" novalidate>
+    {{ form.hidden_tag() }}
+    <h3>Registrar Nuevo Usuario y Campo</h3>
+
+    <h5 class="mt-3">🧍 Datos del Usuario</h5>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.username.label(class="form-label") }} {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else " is-valid"
+        if form.username.data else "")) }} {% if form.username.errors %}
+        <div class="invalid-feedback">{{ form.username.errors[0] }}</div>
+        {% elif form.username.data %}
+        <div class="valid-feedback">Correo válido</div>
+        {% endif %}
+      </div>
+
+      <div class="col-md-6 mb-3">
+        {{ form.password.label(class="form-label") }} {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else " is-valid"
+        if form.password.data else "")) }} {% if form.password.errors %}
+        <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+        {% elif form.password.data %}
+        <div class="valid-feedback">Password válido</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <h5 class="mt-3">📇 Información Personal</h5>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        {{ form.nombre.label(class="form-label") }} {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else " is-valid" if
+        form.nombre.data else "")) }} {% if form.nombre.errors %}
+        <div class="invalid-feedback">{{ form.nombre.errors[0] }}</div>
+        {% elif form.nombre.data %}
+        <div class="valid-feedback">Nombre válido</div>
+        {% endif %}
+      </div>
+
+      <div class="col-md-4 mb-3">
+        {{ form.apellido.label(class="form-label") }} {{ form.apellido(class="form-control" + (" is-invalid" if form.apellido.errors else " is-valid"
+        if form.apellido.data else "")) }} {% if form.apellido.errors %}
+        <div class="invalid-feedback">{{ form.apellido.errors[0] }}</div>
+        {% elif form.apellido.data %}
+        <div class="valid-feedback">Apellido válido</div>
+        {% endif %}
+      </div>
+
+      <div class="col-md-4 mb-3">
+        {{ form.dni.label(class="form-label") }} {{ form.dni(class="form-control" + (" is-invalid" if form.dni.errors else " is-valid" if
+        form.dni.data else "")) }} {% if form.dni.errors %}
+        <div class="invalid-feedback">{{ form.dni.errors[0] }}</div>
+        {% elif form.dni.data %}
+        <div class="valid-feedback">DNI válido</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-12 mb-3">
+      {{ form.cumpleanios.label(class="form-label") }} {{ form.cumpleanios(class="form-control" + (" is-invalid" if form.cumpleanios.errors else "
+      is-valid" if form.cumpleanios.data else "")) }} {% if form.cumpleanios.errors %}
+      <div class="invalid-feedback">{{ form.cumpleanios.errors[0] }}</div>
+      {% elif form.cumpleanios.data %}
+      <div class="valid-feedback">Cumpleaños correcto</div>
+      {% endif %}
+    </div>
+
+    <h5 class="mt-3">🌾 Campo Principal</h5>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.nombre_campo.label(class="form-label") }} {{ form.nombre_campo(class="form-control" + (" is-invalid" if form.nombre_campo.errors else
+        " is-valid" if form.nombre_campo.data else "")) }} {% if form.nombre_campo.errors %}
+        <div class="invalid-feedback">{{ form.nombre_campo.errors[0] }}</div>
+        {% elif form.nombre_campo.data %}
+        <div class="valid-feedback">Nombre del campo válido</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.descripcion_campo.label(class="form-label") }} {{ form.descripcion_campo(class="form-control" + (" is-invalid" if
+        form.descripcion_campo.errors else " is-valid" if form.descripcion_campo.data else "")) }} {% if form.descripcion_campo.errors %}
+        <div class="invalid-feedback">{{ form.descripcion_campo.errors[0] }}</div>
+        {% elif form.descripcion_campo.data %}
+        <div class="valid-feedback">Descripción válida</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <label class="form-label">📍 Seleccione la ubicación del campo</label>
+    <div id="map" style="height: 400px" class="mb-3"></div>
+    <input type="hidden" name="lat" id="lat" />
+    <input type="hidden" name="lon" id="lon" />
+
+    <div class="text-end">
+      <button type="submit" class="btn btn-success">Crear Usuario y Campo</button>
+    </div>
+  </form>
+</div>
+
+<!-- Leaflet y Geocoder -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.13.0/dist/leaflet-geoman.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.13.0/dist/leaflet-geoman.min.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+  const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "UB © Predeterminado",
+  });
+
+  const esriSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    attribution: "UB © Satélite",
+  });
+
+  const map = L.map("map", {
+    center: [-38.0, -63.0],
+    zoom: 5,
+    layers: [esriSat],
+  });
+
+  let marker = null;
+  map.on("click", function (e) {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker(e.latlng).addTo(map);
+    document.getElementById("lat").value = e.latlng.lat;
+    document.getElementById("lon").value = e.latlng.lng;
+  });
+
+  const baseMaps = {
+    Predeterminado: osm,
+    Satélite: esriSat,
+  };
+
+  L.control.layers(baseMaps).addTo(map);
+  L.Control.geocoder({ defaultMarkGeocode: true }).addTo(map);
+  new L.FeatureGroup().addTo(map);
+
+  // Validar antes de enviar el formulario
+  document.querySelector("form").addEventListener("submit", function (e) {
+    const lat = document.getElementById("lat").value;
+    const lon = document.getElementById("lon").value;
+
+    if (!lat || !lon) {
+      e.preventDefault(); // evita que se envíe
+      alert("⚠️ Debe seleccionar una ubicación en el mapa.");
+    }
+  });
+</script>
+
+{% endblock %}
