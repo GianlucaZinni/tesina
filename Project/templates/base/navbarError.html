@@ -1,12 +1,12 @@
 {% if current_user.is_authenticated %}
     <header style="text-align: center;" class="down_shadow">
         <div style="display:flex">
-            <a class="logo" href="{{ url_for('Home.home') }}">
+            <a class="logo" href="{{ url_for('home.home_route') }}">
                 <img class="logo-img" src="/static/images/Universidad_de_Belgrano.png">
             </a>
         </div>
         <ul class="nav__links_home" style="top:5px;">
-            <li class="nav-item"><a href="{{ url_for('Home.home') }}" class="nav-link">Volver al Inicio</a></li>
+            <li class="nav-item"><a href="{{ url_for('home.home_route') }}" class="nav-link">Volver al Inicio</a></li>
         </ul>
     </header>
 
@@ -14,12 +14,12 @@
 
         <header style="text-align: center;" class="down_shadow">
             <div style="display:flex">
-                <a class="logo" href="{{ url_for('Users.login') }}">
+                <a class="logo" href="{{ url_for('users.login') }}">
                     <img class="logo-img" src="/static/images/Universidad_de_Belgrano.png">
                 </a>
             </div>
             <ul class="nav__links_home" style="top:5px;">
-                <li class="nav-item"><a href="{{ url_for('Users.login') }}" class="nav-link">Volver al Inicio</a></li>
+                <li class="nav-item"><a href="{{ url_for('users.login') }}" class="nav-link">Volver al Inicio</a></li>
             </ul>
         </header>
         

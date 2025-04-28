@@ -53,12 +53,12 @@
 </style>
     {% if current_user.is_authenticated %}
         <header style="text-align: center;" class="down_shadow">
-            <a style="position:absolute;" class="logo" href="{{ url_for('Home.home') }}">
+            <a style="position:absolute;" class="logo" href="{{ url_for('home.home_route') }}">
                 <img class="logo-img" src="/static/images/Universidad_de_Belgrano.png">
             </a>
 
             </div>
-            <a href="{{ url_for('Users.logout') }}" class="down_shadow cta" style="position:absolute; right:20;"><i class="fa-solid fa-up-right-from-square"></i></a>
+            <a href="{{ url_for('users.logout') }}" class="down_shadow cta" style="position:absolute; right:20;"><i class="fa-solid fa-up-right-from-square"></i></a>
             <div class="btn-group" style="position:absolute; right:5">
                 <button onclick="openSideUser()" class="menu cta down_shadow" style="width:50px;" type="button">
                     <i class="fa-solid fa-bars"></i>
@@ -69,7 +69,7 @@
     {% else %}
 
         <header style="text-align: center;" class="down_shadow">
-            <a class="logo" href="{{ url_for('Users.login') }}">
+            <a class="logo" href="{{ url_for('users.login') }}">
                 <img class="logo-img" src="/static/images/Universidad_de_Belgrano.png">
             </a>
         </header>
@@ -79,7 +79,7 @@
     <div id="overlayUser" class="overlay">
         <a class="close" onclick="closeSideUser()">&times;</a>
         <div class="overlay__content">
-            <a href="{{ url_for('Home.home') }}"><i class="fa-solid fa-house"></i> <b> Home </b></a>
-            <a href="{{ url_for('Users.logout') }}"><i class="fa-solid fa-up-right-from-square"></i> <b> Log Out </b></a>
+            <a href="{{ url_for('home.home_route') }}"><i class="fa-solid fa-house"></i> <b> Home </b></a>
+            <a href="{{ url_for('users.logout') }}"><i class="fa-solid fa-up-right-from-square"></i> <b> Log Out </b></a>
         </div>
     </div>

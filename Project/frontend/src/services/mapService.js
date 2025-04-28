@@ -1,7 +1,15 @@
+export function clearDrawnLayer(layerRef) {
+    if (layerRef.value) {
+        layerRef.map.removeLayer(layerRef.value);
+        layerRef.value = null;
+    }
+}
+
 export function createBaseMap(containerId, centerCoords) {
     const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "UB © Predeterminado"
     });
+
     const esriSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
         attribution: "UB © Satélite"
     });
@@ -10,17 +18,15 @@ export function createBaseMap(containerId, centerCoords) {
         center: centerCoords,
         zoom: 15,
         maxZoom: 17,
-        minZoom: 2,
+        minZoom: 4,
+        zoomControl: false,
         layers: [esriSat]
     });
 
-    L.control.layers({ "Predeterminado": osm, "Satélite": esriSat }).addTo(map);
-    L.Control.geocoder({ defaultMarkGeocode: true }).addTo(map);
+    // Guardamos en window para acceso externo
+    window._leaflet_map_instance = map
+    window.osm = osm
+    window.esriSat = esriSat
 
-    // Guardar capas y mapa en window
-    window.osm = osm;
-    window.esriSat = esriSat;
-    window._leaflet_map_instance = map;
-
-    return map;
+    return map
 }

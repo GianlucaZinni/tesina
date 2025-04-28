@@ -46,10 +46,10 @@
             </div>
             <div class="middle box">
                 <div class="topic">Navegación</div>
-                <div><a class="texto-navegacion" href="{{ url_for('Home.home', id=0, page=1) }}"> Pedido </a></div>
+                <div><a class="texto-navegacion" href="{{ url_for('home.home_route', id=0, page=1) }}"> Pedido </a></div>
                 <div><a class="texto-navegacion" href="{{ url_for('Home.historialPedidos') }}"> Historial </a></div>
                 <div><a class="texto-navegacion" href="{{ url_for('Users.account') }}"> Cuenta </a></div>
-                <div><a class="texto-navegacion" href="{{ url_for('Users.logout') }}"></i> Log Out </a></div>
+                <div><a class="texto-navegacion" href="{{ url_for('users.logout') }}"></i> Log Out </a></div>
             </div>
             <div class="right box">
                 <div class="topic">Medios de pago</div>

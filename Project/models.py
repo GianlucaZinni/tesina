@@ -14,6 +14,7 @@ from Project import db, login_manager
 from flask_login import UserMixin
 from flask import abort
 
+from datetime import datetime
 
 # Configuración de Flask-Login
 @login_manager.user_loader
@@ -133,6 +134,22 @@ class AsignacionCollar(db.Model):
     motivo_cambio = Column(String(100))
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
 
+
+class NodoAutorizado(db.Model):
+    __tablename__ = 'nodos_autorizados'
+    id = Column(Integer, primary_key=True)
+    collar_id = Column(Integer, ForeignKey('collares.id'), unique=True, nullable=False)
+
+    client_id = Column(String(100), unique=True, nullable=False)  # identificador del nodo MQTT
+    certificado_cn = Column(String(100), nullable=True)           # extraído del TLS mutual auth
+    esta_autorizado = Column(Boolean, default=False)
+    fecha_autorizacion = Column(DateTime, default=datetime.utcnow)
+
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))  # quién lo autorizó
+    observaciones = Column(Text)
+    
+    collar = relationship("Collar", backref="nodo_autorizado")
+    usuario = relationship("Usuario")
 
 
 class Ubicacion(db.Model):

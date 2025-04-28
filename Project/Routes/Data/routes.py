@@ -1,14 +1,15 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
+from sqlalchemy import desc
 from flask_login import current_user
 from sqlalchemy import func
 from Project import db
-from Project.models import Campo, Parcela, Animal, Collar, EventoSanitario, Alarma
+from Project.models import Campo, Parcela, Animal, Collar, EventoSanitario, Alarma, Animal, Collar, Ubicacion, Temperatura, Acelerometro
 import json
 
-Dashboard = Blueprint("Dashboard", __name__, url_prefix="/dashboard")
+dashboard = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 
 
-@Dashboard.route("/general")
+@dashboard.route("/general")
 def dashboard_general():
     # Simulación de usuario logueado (usar Flask-Login en producción)
     usuario_id = current_user.id
@@ -129,3 +130,60 @@ def dashboard_general():
         campo_id_filtro=campo_id,
         parcelas_por_campo=parcelas_por_campo
     )
+
+@dashboard.route('/data')
+def datos_json():
+    animales = Animal.query.all()
+    resultado = []
+
+    for animal in animales:
+        collar = Collar.query.filter_by(animal_id=animal.id).first()
+        if not collar:
+            continue
+
+        ubicacion = Ubicacion.query.filter_by(collar_id=collar.id).order_by(desc(Ubicacion.timestamp)).first()
+        temperatura = Temperatura.query.filter_by(collar_id=collar.id).order_by(desc(Temperatura.timestamp)).first()
+        acelerometro = Acelerometro.query.filter_by(collar_id=collar.id).order_by(desc(Acelerometro.timestamp)).first()
+
+        resultado.append({
+            "animal_id": animal.id,
+            "nombre": animal.nombre,
+            "collar_codigo": collar.codigo,
+            "temperatura": temperatura.corporal if temperatura else None,
+            "ubicacion": {
+                "lat": ubicacion.lat,
+                "lon": ubicacion.lon
+            } if ubicacion else None,
+            "acelerometro": {
+                "x": acelerometro.x,
+                "y": acelerometro.y,
+                "z": acelerometro.z
+            } if acelerometro else None,
+            "timestamp": ubicacion.timestamp.strftime("%Y-%m-%d %H:%M:%S") if ubicacion else None
+        })
+
+    return jsonify(resultado)
+
+@dashboard.route('/collares')
+def collares():
+    animales = Animal.query.all()
+    datos = []
+
+    for animal in animales:
+        collar = Collar.query.filter_by(animal_id=animal.id).first()
+        if not collar:
+            continue
+
+        ubicacion = Ubicacion.query.filter_by(collar_id=collar.id).order_by(desc(Ubicacion.timestamp)).first()
+        temperatura = Temperatura.query.filter_by(collar_id=collar.id).order_by(desc(Temperatura.timestamp)).first()
+        acelerometro = Acelerometro.query.filter_by(collar_id=collar.id).order_by(desc(Acelerometro.timestamp)).first()
+
+        datos.append({
+            "animal": animal,
+            "collar": collar,
+            "ubicacion": ubicacion,
+            "temperatura": temperatura,
+            "acelerometro": acelerometro
+        })
+
+    return render_template("data/realtime.html", datos=datos)

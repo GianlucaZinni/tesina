@@ -1,0 +1,7 @@
+1. Configuración del Broker MQTT: Establecer un broker MQTT con TLS y autenticación mutua.​
+
+2. Desarrollo del Cliente Gateway: Implementar el cliente MQTT que se conectará al broker, procesará los mensajes y los reenviará a la API.​
+
+3. Implementación de la API REST: Desarrollar la API que recibirá y almacenará los datos procesados por el gateway.​
+
+4. Integración de Monitoreo y Logging: Configurar herramientas de monitoreo y registro para supervisar el rendimiento y la seguridad del sistema.

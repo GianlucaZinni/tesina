@@ -1,0 +1,19 @@
+{% extends 'base/layout.html' %}
+{% include "base/navbar.html" %} 
+{% block onecontent %}
+<div class="container mt-4">
+    <h3 class="mb-4">📡 Monitoreo en Tiempo Real</h3>
+    <div id="panel-dinamico" class="row"></div>
+</div>
+
+<!-- Leaflet Core & Plugins -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<!-- Axios & Módulo principal -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script type="module" src="{{ url_for('static', filename='js/realtime.view.js') }}"></script>
+{% endblock %}

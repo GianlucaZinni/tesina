@@ -22,16 +22,21 @@ def create_app(config_class=Config):
 
     app.config["SECRET_KEY"] = "hfouewhfoiwefasdasdasdoquw"
 
-    from Project.Routes.Home.routes import Home
-    from Project.Routes.Users.routes import Users
+    from Project.Routes.home.routes import home
+    from Project.Routes.users.routes import users
     from Project.Routes.config.routes import config
-    from Project.Routes.Data.routes import Dashboard
+    from Project.Routes.api_gateway.routes import api_gateway
+    from Project.Routes.data.routes import dashboard
     from Project.Routes.errors.handlers import errors
+    from Project.Routes.static_files.routes import static_files
 
-    app.register_blueprint(Home)
-    app.register_blueprint(Users)
+
+    app.register_blueprint(home)
+    app.register_blueprint(users)
     app.register_blueprint(config)
-    app.register_blueprint(Dashboard)
+    app.register_blueprint(dashboard)
     app.register_blueprint(errors)
+    app.register_blueprint(api_gateway)
+    app.register_blueprint(static_files)
 
     return app

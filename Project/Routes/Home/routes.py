@@ -1,38 +1,45 @@
-from flask import url_for, redirect, render_template, Blueprint
+from flask import Blueprint, render_template, current_app, url_for, redirect
 from Project.access import admin_required
+import json
 
-from flask import url_for, redirect, Blueprint
-Home = Blueprint('Home', __name__)
+home = Blueprint("home", __name__)
 
-@Home.route('/')
+
+@home.route("/")
 def empty_route():
-    return redirect(url_for("Users.login"))
+    return redirect(url_for("users.login"))
 
-@Home.route('/home', methods=['GET', 'POST'])
+
+@home.route("/mapa")
+def default():
+    # Ruta absoluta del manifest generado por Vite
+    manifest_path = current_app.root_path + "\static\dist\.vite\manifest.json"
+
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+        # accedemos a los archivos principales
+        js_file = manifest["index.html"]["file"]
+        css_file = manifest["index.html"].get("css", [None])[0]  # puede no tener
+
+    return render_template("index.html", js_file=js_file, css_file=css_file)
+
+
+@home.route("/campos")
+@home.route("/parcelas")
+def react():
+    # Ruta absoluta del manifest generado por Vite
+    manifest_path = current_app.root_path + "\static\dist\.vite\manifest.json"
+
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+        # accedemos a los archivos principales
+        js_file = manifest["index.html"]["file"]
+        css_file = manifest["index.html"].get("css", [None])[0]  # puede no tener
+
+    return render_template("index.html", js_file=js_file, css_file=css_file)
+
+
+@home.route("/home", methods=["GET", "POST"])
 @admin_required
-def home():
-    return render_template('base/home.html')
-
-@Home.route('/index')
-@admin_required
-def index():
-    PAGE_TITLE = "Buenos Aires Live Map"
-
-    MAP_URL_TEMPLATE = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    MAP_STARTING_CENTER = [-35.269560, -60.802627]  # 📌 Centro del área de pastoreo
-    MAP_STARTING_ZOOM = 15  # 📌 Zoom más cercano para ver mejor la zona
-    MAP_MAX_ZOOM = 18
-
-    KAFKA_TOPIC = "geodata_stream_topic_ba"
-
-    return render_template(
-        "base/index.html",
-        PAGE_TITLE=PAGE_TITLE,
-        MAP_URL_TEMPLATE=MAP_URL_TEMPLATE,
-        MAP_ATTRIBUTION=MAP_ATTRIBUTION,
-        MAP_STARTING_CENTER=MAP_STARTING_CENTER,
-        MAP_STARTING_ZOOM=MAP_STARTING_ZOOM,
-        MAP_MAX_ZOOM=MAP_MAX_ZOOM,
-        KAFKA_TOPIC=KAFKA_TOPIC,
-    )
+def home_route():
+    return render_template("base/home.html")
