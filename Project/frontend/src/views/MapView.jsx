@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 import { Home, Layers, LocateFixed, Save, CircleX, MapPin, ChevronDown } from 'lucide-react'
 
+import DrawToolPanel from '../components/DrawToolPanel'
+import { usePolygonTools } from '../hooks/polygonTools'
 import { createBaseMap } from '../services/mapService'
-import { PARCELA_STYLES, fetchParcelaInit, updateParcela } from '../services/parcelaService'
-
-import geodesicArea from '../utils/math'
-
-import { usePolygonTools } from '../hooks/polygonTools/index'
-import { useChangeTool } from '../hooks/polygonTools/change'
+import { fetchParcelaInit, updateParcela } from '../services/parcelaService'
+import { PARCELA_STYLES } from '../constants/styles'
+import { fromLonLat } from 'ol/proj'
+import GeoJSON from 'ol/format/GeoJSON'
+import VectorLayer from 'ol/layer/Vector'
+import VectorSource from 'ol/source/Vector'
+import Style from 'ol/style/Style'
+import Stroke from 'ol/style/Stroke'
+import Fill from 'ol/style/Fill'
+import * as olSphere from 'ol/sphere'
 
 export default function MapView() {
     const [campos, setCampos] = useState({})
@@ -18,37 +22,169 @@ export default function MapView() {
     const [formData, setFormData] = useState({ campo_id: '', parcela_id: '' })
     const [center, setCenter] = useState({ lat: -36.79, lon: -64.31 })
     const [loading, setLoading] = useState(true)
-    const [isDeleteMode, setIsDeleteMode] = useState(false)
     const [selectorOpen, setSelectorOpen] = useState(false)
     const [areaCampo, setAreaCampo] = useState(0)
     const [areaParcela, setAreaParcela] = useState(0)
+    const [isDeleteMode, setIsDeleteMode] = useState(false)
 
     const mapRef = useRef(null)
-    const parcelasLayer = useRef([])
-
+    const vectorLayerRef = useRef(null)
+    const selectorRef = useRef(null)
     const navigate = useNavigate()
 
     const {
+        enableDraw,
+        cancelDraw,
+        endPolygon,
+        clearDraw,
+        canFinish,
+        closedBySnap,
         activateEditMode,
         clearEdit,
         getEditedLayer,
         activateDeleteMode,
         disableDeleteMode
-    } = useChangeTool(mapRef, (latlngs) => {
-        const coords = latlngs.map(p => [p.lat, p.lng])
-        const area = geodesicArea(coords)
-        setAreaParcela(area)
+    } = usePolygonTools(mapRef, (geojson) => {
+        if (geojson?.geometry?.coordinates) {
+            const geometry = new GeoJSON().readGeometry(geojson.geometry, { featureProjection: 'EPSG:3857' })
+            const area = olSphere.getArea(geometry)
+            setAreaParcela(area)
+        }
     })
 
+    const calcularArea = (feature) => {
+        const geometry = feature.getGeometry()
+        return olSphere.getArea(geometry, { projection: 'EPSG:3857' })
+    }
 
+    const handleParcelaSelect = (parcela, feature) => {
+        if (vectorLayerRef.current) {
+            const src = vectorLayerRef.current.getSource()
+            const f = src.getFeatureById(parcela.id)
+            if (f) src.removeFeature(f)
+        }
+        activateEditMode(parcela)
+        setFormData(prev => ({ ...prev, parcela_id: parcela.id }))
+        setAreaParcela(calcularArea(feature))
+    }
 
-    // const {
-    //     activateEditMode,
-    //     clearEdit,
-    //     getEditedLayer,
-    //     activateDeleteMode,
-    //     disableDeleteMode
-    // } = useChangeTool(mapRef)
+    const pintarParcelas = () => {
+        const map = mapRef.current
+        if (!map || !formData.campo_id) return
+
+        const source = new VectorSource()
+        const geojsonFormat = new GeoJSON()
+        const lista = parcelas[formData.campo_id] || []
+
+        let areaTotal = 0
+
+        lista.forEach(parcela => {
+            console.log('Parcela GeoJSON a procesar:', parcela)
+            const feature = geojsonFormat.readFeature(parcela, {
+                featureProjection: 'EPSG:3857'
+            })
+            feature.setId(parcela.id)
+            source.addFeature(feature)
+            areaTotal += calcularArea(feature)
+        })
+
+        const vectorLayer = new VectorLayer({
+            source,
+            style: new Style({
+                stroke: new Stroke({
+                    color: PARCELA_STYLES.base.color,
+                    width: PARCELA_STYLES.base.weight
+                }),
+                fill: new Fill({
+                    color: `rgba(255,255,255,${PARCELA_STYLES.base.fillOpacity})`
+                })
+            })
+        })
+
+        if (vectorLayerRef.current) {
+            map.removeLayer(vectorLayerRef.current)
+        }
+
+        vectorLayerRef.current = vectorLayer
+        map.addLayer(vectorLayer)
+
+        map.once('singleclick', (evt) => {
+            map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+                const id = feature.getId()
+                const parcela = lista.find(p => p.id === id)
+                if (parcela) {
+                    handleParcelaSelect(parcela, feature)
+                }
+            })
+        })
+
+        setAreaCampo(areaTotal)
+        setAreaParcela(0)
+    }
+
+    const reloadParcelas = async () => {
+        const data = await fetchParcelaInit()
+        setParcelas(data.parcelas)
+        pintarParcelas()
+    }
+
+    const handleGuardar = async () => {
+        const edited = getEditedLayer()
+        if (!edited || !formData.parcela_id) {
+            alert('Seleccioná una parcela para guardar los cambios.')
+            return
+        }
+
+        try {
+            await updateParcela(formData.parcela_id, edited)
+            setFormData(prev => ({ ...prev, parcela_id: '' }))
+            setAreaParcela(0)
+            clearEdit()
+            setIsDeleteMode(false)
+            reloadParcelas()
+        } catch (err) {
+            console.error('Error al guardar cambios:', err)
+        }
+    }
+
+    const handleCampoChangeManual = (campoId) => {
+        setFormData({ campo_id: campoId, parcela_id: '' })
+        const campo = campos[campoId]
+        if (campo && mapRef.current) {
+            const center = fromLonLat([campo.lon, campo.lat])
+            mapRef.current.getView().animate({ center, zoom: 15 })
+        }
+    }
+
+    const toggleLayer = () => {
+        const osm = window.osmLayer
+        const sat = window.esriSatLayer
+        if (!osm || !sat) return
+        const osmVisible = osm.getVisible()
+        osm.setVisible(!osmVisible)
+        sat.setVisible(osmVisible)
+    }
+
+    const handleDeleteModeToggle = () => {
+        setIsDeleteMode(prev => {
+            const next = !prev
+            next ? activateDeleteMode() : disableDeleteMode()
+            return next
+        })
+    }
+
+    const handleNavigateHome = () => {
+        navigate('/home')
+    }
+
+    const handleLocate = () => {
+        if (navigator.geolocation && mapRef.current) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const coords = fromLonLat([position.coords.longitude, position.coords.latitude])
+                mapRef.current.getView().animate({ center: coords, zoom: 16 })
+            })
+        }
+    }
 
     useEffect(() => {
         async function init() {
@@ -58,201 +194,37 @@ export default function MapView() {
                 setParcelas(data.parcelas)
                 setCenter(data.center)
 
-                if (data.campo_preferido_id) {
-                    setFormData({ campo_id: data.campo_preferido_id, parcela_id: '' })
-                } else {
-                    const camposArray = Object.keys(data.campos)
-                    if (camposArray.length > 0) {
-                        setFormData({ campo_id: camposArray[0], parcela_id: '' })
-                    }
-                }
-
+                const campoId = data.campo_preferido_id || Object.keys(data.campos)[0]
+                setFormData({ campo_id: campoId, parcela_id: '' })
                 setLoading(false)
             } catch (err) {
                 console.error('Error al cargar datos del mapa:', err)
             }
         }
-
         init()
     }, [])
 
     useEffect(() => {
-        if (loading) return
-
-        const mapElement = document.getElementById('map')
-        if (!mapElement) return
-
-        if (!mapRef.current) {
+        if (!loading && !mapRef.current) {
             const map = createBaseMap('map', [center.lat, center.lon])
             mapRef.current = map
-
-            map.on('click', handleMapClick)
-
-            pintarParcelas()
         }
+        if (!loading) pintarParcelas()
     }, [loading])
 
     useEffect(() => {
-        if (!loading && mapRef.current) {
-            pintarParcelas()
-        }
-    }, [formData.campo_id, formData.parcela_id])
+        if (!loading && mapRef.current) pintarParcelas()
+    }, [formData.campo_id])
 
-    const handleMapClick = (e) => {
-        if (
-            e.originalEvent.target.classList.contains('vertex-marker') ||
-            e.originalEvent.target.classList.contains('intermediate-marker')
-        ) return
-
-        if (getEditedLayer()?.getBounds()?.contains(e.latlng)) return
-
-        clearEdit()
-        setFormData(prev => ({ ...prev, parcela_id: '' }))
-        setIsDeleteMode(false)
-        disableDeleteMode()
-    }
-
-    const pintarParcelas = () => {
-        const map = mapRef.current
-        if (!map || !formData.campo_id) return
-    
-        clearEdit()
-        limpiarParcelas()
-    
-        const parcelasDelCampo = parcelas[formData.campo_id] || []
-    
-        let areaTotal = 0
-    
-        if (formData.parcela_id === '') {
-            parcelasDelCampo.forEach(parcela => {
-                const layer = L.geoJSON(parcela, {
-                    style: PARCELA_STYLES.base
-                }).addTo(map)
-    
-                layer.on('click', () => {
-                    clearEdit()
-                    limpiarParcelas()
-    
-                    const editable = L.geoJSON(parcela, {
-                        style: PARCELA_STYLES.edit.polygon
-                    }).getLayers()[0]
-                    activateEditMode(editable)
-    
-                    setFormData(prev => ({ ...prev, parcela_id: parcela.id }))
-    
-                    // Obtener coordenadas para calcular área
-                    const latlngs = editable.getLatLngs()[0].map(latlng => [latlng.lat, latlng.lng])
-                    const area = geodesicArea(latlngs)
-                    setAreaParcela(area)
-                })
-    
-                parcelasLayer.current.push(layer)
-    
-                // Acumulamos área total de todas las parcelas
-                const capa = layer.getLayers()[0]
-                if (capa) {
-                    const latlngs = capa.getLatLngs()[0].map(latlng => [latlng.lat, latlng.lng])
-                    const areaParcela = geodesicArea(latlngs)
-                    areaTotal += areaParcela
-                }
-            })
-    
-            setAreaCampo(areaTotal)
-            setAreaParcela(0)
-        } else {
-            const seleccionada = parcelasDelCampo.find(p => p.id == formData.parcela_id)
-            if (seleccionada) {
-                const editable = L.geoJSON(seleccionada, {
-                    style: PARCELA_STYLES.edit.polygon
-                }).getLayers()[0]
-                activateEditMode(editable)
-    
-                const latlngs = editable.getLatLngs()[0].map(latlng => [latlng.lat, latlng.lng])
-                const area = geodesicArea(latlngs)
-                setAreaParcela(area)
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (selectorRef.current && !selectorRef.current.contains(event.target)) {
+                setSelectorOpen(false)
             }
         }
-    }
-
-    const limpiarParcelas = () => {
-        const map = mapRef.current
-        parcelasLayer.current.forEach(layer => map.removeLayer(layer))
-        parcelasLayer.current = []
-    }
-
-    const handleCampoChangeManual = (campoId) => {
-        setFormData({ campo_id: campoId, parcela_id: '' })
-        const campo = campos[campoId]
-        if (campo && mapRef.current) {
-            mapRef.current.setView([campo.lat, campo.lon], 15)
-        }
-    }
-
-    const handleGuardar = async () => {
-        const editedLayer = getEditedLayer()
-        if (!editedLayer || !formData.parcela_id) {
-            alert('Seleccioná una parcela para guardar los cambios.')
-            return
-        }
-    
-        const geojson = editedLayer.toGeoJSON()
-    
-        try {
-            await updateParcela(formData.parcela_id, geojson)
-    
-            setParcelas(prevParcelas => {
-                const nuevasParcelas = { ...prevParcelas }
-                const parcelasCampo = [...(nuevasParcelas[formData.campo_id] || [])]
-    
-                const index = parcelasCampo.findIndex(p => p.id == formData.parcela_id)
-                if (index !== -1) {
-                    parcelasCampo[index] = {
-                        ...parcelasCampo[index],
-                        ...geojson,
-                        id: formData.parcela_id
-                    }
-                    nuevasParcelas[formData.campo_id] = parcelasCampo
-                }
-                return nuevasParcelas
-            })
-    
-            clearEdit()
-            setIsDeleteMode(false)
-            setFormData(prev => ({ ...prev, parcela_id: '' }))
-            setAreaParcela(0)
-            pintarParcelas()
-    
-        } catch (err) {
-            console.error('Error al guardar cambios:', err)
-        }
-    }
-    
-
-    const handleDeleteModeToggle = () => {
-        setIsDeleteMode(prev => {
-            const next = !prev
-            if (next) activateDeleteMode()
-            else disableDeleteMode()
-            return next
-        })
-    }
-
-    const toggleLayer = () => {
-        const map = mapRef.current
-        const osm = window.osm
-        const esriSat = window.esriSat
-        if (map.hasLayer(osm)) {
-            map.removeLayer(osm)
-            esriSat.addTo(map)
-        } else {
-            map.removeLayer(esriSat)
-            osm.addTo(map)
-        }
-    }
-
-    const handleNavigateHome = () => {
-        navigate('/home')
-    }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     if (loading) return <div className="p-4">Cargando mapa...</div>
 
@@ -261,20 +233,19 @@ export default function MapView() {
             <div id="map" className="absolute inset-0 z-0" />
 
             <div className="absolute top-4 left-4 z-40 flex flex-col gap-2">
-                <button  onClick={handleNavigateHome} title="Home" className="bg-white rounded-full p-3 shadow-md">
+                <button onClick={handleNavigateHome} title="Home" className="bg-white rounded-full p-3 shadow-md">
                     <Home className="w-6 h-6 text-gray-800" />
                 </button>
                 <button onClick={toggleLayer} title="Cambiar capa" className="bg-white rounded-full p-3 shadow-md">
                     <Layers className="w-6 h-6 text-gray-800" />
                 </button>
-                <button onClick={() => mapRef.current?.locate({ setView: true })} title="Mi ubicación" className="bg-white rounded-full p-3 shadow-md">
+                <button onClick={handleLocate} title="Mi ubicación" className="bg-white rounded-full p-3 shadow-md">
                     <LocateFixed className="w-6 h-6 text-gray-800" />
                 </button>
             </div>
 
-            {/* Botón central */}
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-                <div className="relative">
+                <div ref={selectorRef} className="relative">
                     <button
                         onClick={() => setSelectorOpen(!selectorOpen)}
                         className="flex items-center gap-2 px-6 py-3 bg-black/60 backdrop-blur-md rounded-full shadow-lg text-white font-semibold text-sm hover:bg-black/70 transition-all"
@@ -313,23 +284,29 @@ export default function MapView() {
                 </div>
             </div>
 
-            {/* Botones inferiores */}
+            <DrawToolPanel
+                onStart={enableDraw}
+                onFinish={endPolygon}
+                onCancel={cancelDraw}
+                onUndo={() => { }}
+                canFinish={canFinish}
+                closedBySnap={closedBySnap}
+            />
+
             {formData.parcela_id && (
                 <>
-                    <div className="absolute bottom-40 right-4 z-40 flex flex-row-reverse gap-2">
-                        <button onClick={handleGuardar} 
-                        className="bg-green-600 text-white p-3 rounded-full shadow-md" 
-                        title="Guardar cambios">
-                            <Save className="w-6 h-6" />
-                        </button>
-                    </div>
-                    <div className="absolute bottom-24 right-4 z-40 flex flex-row-reverse gap-2">
+                    <div style={{ bottom: '8.5rem' }} className="absolute right-4 z-40 flex flex-row-reverse gap-2">
                         <button
                             onClick={handleDeleteModeToggle}
-                            className={`p-3 rounded-full shadow-md ${isDeleteMode ? 'bg-red-600 text-white' : 'bg-white'}`}
+                            className="p-3 rounded-full shadow-md bg-white"
                             title="Eliminar vértices"
                         >
                             <CircleX className="w-6 h-6" />
+                        </button>
+                    </div>
+                    <div className="absolute bottom-20 right-4 z-40 flex flex-row-reverse gap-2">
+                        <button onClick={handleGuardar} className="bg-white p-3 rounded-full shadow-md" title="Guardar cambios">
+                            <Save className="w-6 h-6" />
                         </button>
                     </div>
                 </>

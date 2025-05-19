@@ -204,6 +204,7 @@ class Parcela(db.Model):
     nombre = Column(String(100))
     descripcion = Column(String(200))
     perimetro_geojson = Column(Text)
+    area = Column(Float)
     campo_id = Column(Integer, ForeignKey("campos.id"), nullable=False)
     animales = relationship('Animal', backref='parcela', lazy=True)
 

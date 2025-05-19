@@ -70,27 +70,16 @@ button:focus-visible {
 }
 
 .vertex-marker {
-  width: 10px;
-  height: 10px;
-  background-color: #8e1358;
-  border: 2px solid #3b82f6; /* azul destacado */
+  background: #630c3c;
+  border: 2px solid #630c3c;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px white; /* contorno claro para visibilidad */
-}
-
-.vertex-marker.deletable {
-  cursor: pointer;
 }
 
 .intermediate-marker {
-  width: 8px;
-  height: 8px;
-  background-color: #bbb;
-  border: 1px solid white;
+  background: #d15d9f;
+  border: 1px solid #d15d9f;
   border-radius: 50%;
-  opacity: 0.9;
 }
-
 
 @keyframes slide-in-left {
   0% {
@@ -158,52 +147,4 @@ button:focus-visible {
     margin-top: 2.5rem;
     justify-content: start;
   }
-}
-
-.area-label {
-  background-color: rgba(0, 0, 0, 0.75);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  pointer-events: none;
-  white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-body.draw-mode {
-  cursor: crosshair;
-}
-
-.cursor-draw {
-  cursor: crosshair;
-}
-
-.draw-mode .ol-overlaycontainer-stopevent {
-  pointer-events: none;
-}
-
-.cursor-draw::after {
-  content: '';
-  position: fixed;
-  width: 12px;
-  height: 12px;
-  background: #FF9B00;
-  border: 2px solid #A0660C;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 9999;
-}
-
-.ol-tooltip-text {
-  background: rgba(60, 60, 60, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 13px;
-  white-space: nowrap;
-  user-select: none;
-  pointer-events: none;
 }

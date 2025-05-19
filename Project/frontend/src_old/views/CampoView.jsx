@@ -9,7 +9,7 @@ import { Save, MapPinPlus, MapPinX } from 'lucide-react'
 import { createCampo, updateCampo, deleteCampo } from '../services/campoService'
 import { fetchParcelaInit } from '../services/parcelaService'
 import { createBaseMap } from '../services/mapService'
-import { PARCELA_STYLES } from '../constants/styles'
+import { PARCELA_STYLES } from '../services/parcelaService'
 
 export default function CampoView() {
     const [loading, setLoading] = useState(true)

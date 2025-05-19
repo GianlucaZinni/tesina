@@ -508,6 +508,8 @@ def api_data_parcela():
             geojson["id"] = parcela.id
             geojson["nombre"] = parcela.nombre
             geojson["descripcion"] = parcela.descripcion
+            geojson["area"] = parcela.area
+
             campo_id = parcela.campo_id
             parcelas_data.setdefault(campo_id, []).append(geojson)
         except Exception:
@@ -544,6 +546,7 @@ def api_create_parcela():
     campo_id = data.get("campo_id")
     nombre = data.get("nombre")
     descripcion = data.get("descripcion")
+    area = data.get("area")
     perimetro_geojson = data.get("perimetro_geojson")
 
     if not campo_id or not nombre or not perimetro_geojson:
@@ -557,6 +560,7 @@ def api_create_parcela():
         nombre=nombre,
         descripcion=descripcion,
         perimetro_geojson=json.dumps(perimetro_geojson),
+        area=area,
         campo_id=campo_id
     )
     db.session.add(nueva)
@@ -575,13 +579,13 @@ def api_update_parcela(parcela_id):
     nuevo_geojson = data.get("geojson")
     nuevo_nombre = data.get("nombre")
     nueva_descripcion = data.get("descripcion")
-    
-    print(nuevo_geojson)
+    nueva_area = data.get("area")
 
     if not nuevo_geojson:
         return {"status": "error", "message": "GeoJSON faltante"}, 400
 
     parcela.perimetro_geojson = json.dumps(nuevo_geojson)
+    parcela.area = nueva_area
 
     if nuevo_nombre:
         parcela.nombre = nuevo_nombre

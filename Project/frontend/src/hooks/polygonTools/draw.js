@@ -1,219 +1,367 @@
-import { useState, useEffect, useRef } from 'react'
-import L from 'leaflet'
-import 'leaflet-geometryutil'
-import { PARCELA_STYLES } from '../../services/parcelaService'
-import geodesicArea from '../../utils/math'
+import { useEffect, useRef, useState } from 'react'
+import { Feature } from 'ol'
+import { Polygon, Point, LineString } from 'ol/geom'
+import { Vector as VectorLayer } from 'ol/layer'
+import { Vector as VectorSource } from 'ol/source'
+import { getArea as getGeodesicArea } from 'ol/sphere'
+import Overlay from 'ol/Overlay'
 
-export function useDrawTool(mapRef, { mode, setMode, setArea, setTooltipText }) {
+import { polygonGlobals } from './general'
+import { PARCELA_STYLES } from '../../constants/styles'
+
+export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
     const drawingPoints = useRef([])
-    const currentPolygon = useRef(null)
-    const previewMarker = useRef(null)
+    const vertexFeatures = useRef([])
     const previewLine = useRef(null)
-    const areaLabel = useRef(null)
-    const vertexMarkers = useRef([])
-    const finalPolygon = useRef(null)
+    const previewVertex = useRef(null)
+    const areaLabelOverlay = useRef(null)
+    const tooltipOverlay = useRef(null)
+    const vectorSource = useRef(null)
+    const vectorLayer = useRef(null)
+    const finalFeature = useRef(null)
+
     const [canFinish, setCanFinish] = useState(false)
     const [closedBySnap, setClosedBySnap] = useState(false)
+    const [firstVertexDraw, setFirstVertexDraw] = useState(false)
 
-    const endPolygon = () => {
-        const map = mapRef.current
+    const pixelSnapThreshold = 15
 
-        if (drawingPoints.current.length >= 3) {
-            finalPolygon.current = L.polygon(drawingPoints.current, PARCELA_STYLES.created).addTo(map)
-        }
-        disableDraw()
-    }
-
-    const enableDraw = () => {
-        disableDraw()
-        setClosedBySnap(false)
-        setMode('draw')
-        setTooltipText('Click para colocar el primer vértice')
-    }
-
-    const updateCanFinish = () => {
-        setCanFinish(drawingPoints.current.length >= 3)
-    }
-
-    const cancelDraw = () => {
-        const map = mapRef.current
-        if (finalPolygon.current) {
-            map.removeLayer(finalPolygon.current)
-            finalPolygon.current = null
-        }
-        disableDraw()
-    }    
-
-    const disableDraw = () => {
-        const map = mapRef.current
-        setMode(null)
+    const resetAllState = () => {
         drawingPoints.current = []
+        vertexFeatures.current = []
+        previewLine.current = null
+        previewVertex.current = null
+        finalFeature.current = null
         setCanFinish(false)
+        setArea(0)
+        setClosedBySnap(false)
+        setFirstVertexDraw(false)
+        setTooltipText('')
+    }
+
+    const handleMapDoubleClick = useRef((evt) => {
+        if (polygonGlobals.modeRef.current !== 'draw') return
+    
+        if (drawingPoints.current.length >= 3) {
+            setClosedBySnap(true)
+            endPolygon()
+            evt.preventDefault() // Previene el zoom de doble click por defecto
+        }
+    }).current    
+
+    const renderPreviewLine = (cursorCoord) => {
+        if (!vectorSource.current || drawingPoints.current.length === 0) return
+
+        if (previewLine.current) {
+            vectorSource.current.removeFeature(previewLine.current)
+        }
+
+        const last = drawingPoints.current[drawingPoints.current.length - 1]
+        const line = new LineString([last, cursorCoord])
+        previewLine.current = new Feature(line)
+        previewLine.current.setStyle(PARCELA_STYLES.previewLine)
+        vectorSource.current.addFeature(previewLine.current)
+    }
+
+    const renderPreviewVertex = (coord, isSnapping) => {
+        if (!vectorSource.current) return
+
+        if (!previewVertex.current) {
+            previewVertex.current = new Feature(new Point(coord))
+            vectorSource.current.addFeature(previewVertex.current)
+        } else {
+            previewVertex.current.getGeometry().setCoordinates(coord)
+        }
+
+        previewVertex.current.setStyle(isSnapping ? PARCELA_STYLES.vertexSnap : PARCELA_STYLES.previewVertex)
+    }
+
+    const renderVertex = (coord) => {
+        const vertex = new Feature(new Point(coord))
+        vertex.setStyle(PARCELA_STYLES.vertexDraw)
+        vertexFeatures.current.push(vertex)
+        vectorSource.current.addFeature(vertex)
+    }
+
+    const updatePolygonPreview = () => {
+        if (!vectorSource.current || drawingPoints.current.length < 2) return
+
+        vectorSource.current.getFeatures().forEach(f => {
+            if (f.getGeometry() instanceof Polygon) vectorSource.current.removeFeature(f)
+        })
+
+        const polygonFeature = new Feature(new Polygon([drawingPoints.current]))
+        polygonFeature.setStyle(PARCELA_STYLES.draw)
+        vectorSource.current.addFeature(polygonFeature)
+    }
+
+    const updateAreaOverlay = () => {
+        const map = mapRef.current
+        if (!map || drawingPoints.current.length < 3) {
+            if (areaLabelOverlay.current) {
+                map.removeOverlay(areaLabelOverlay.current)
+                areaLabelOverlay.current = null
+            }
+            setArea(0)
+            return
+        }
+
+        const polygon = new Polygon([drawingPoints.current])
+        const area = getGeodesicArea(polygon, { projection: 'EPSG:3857' })
+        setArea(area)
+
+        const text = `${(area / 10000).toFixed(2)} ha`
+        const centroid = polygon.getInteriorPoint().getCoordinates()
+
+        if (!areaLabelOverlay.current) {
+            const div = document.createElement('div')
+            div.className = 'area-label'
+            div.textContent = text
+
+            areaLabelOverlay.current = new Overlay({
+                element: div,
+                positioning: 'center-center',
+                stopEvent: false
+            })
+            map.addOverlay(areaLabelOverlay.current)
+        }
+
+        areaLabelOverlay.current.getElement().textContent = text
+        areaLabelOverlay.current.setPosition(centroid)
+    }
+
+    const updateTooltipOverlay = (text, coord) => {
+        const map = mapRef.current
         if (!map) return
 
-        if (currentPolygon.current) {
-            map.removeLayer(currentPolygon.current)
-            currentPolygon.current = null
+        if (!tooltipOverlay.current) {
+            const div = document.createElement('div')
+            div.className = 'map-tooltip'
+            tooltipOverlay.current = new Overlay({ element: div, offset: [0, -15], positioning: 'bottom-center', className: 'ol-tooltip-text' })
+            map.addOverlay(tooltipOverlay.current)
         }
 
-        previewMarker.current && map.removeLayer(previewMarker.current)
-        previewLine.current && map.removeLayer(previewLine.current)
-        areaLabel.current && map.removeLayer(areaLabel.current)
-        vertexMarkers.current.forEach(m => map.removeLayer(m))
-
-        previewMarker.current = null
-        previewLine.current = null
-        areaLabel.current = null
-        vertexMarkers.current = []
-        setArea(0)
+        tooltipOverlay.current.getElement().textContent = text
+        tooltipOverlay.current.setPosition(coord)
     }
 
-    const handleClick = (e) => {
-        if (mode !== 'draw') return
-
+    const handleMapClick = useRef((evt) => {
+        if (polygonGlobals.modeRef.current !== 'draw') return
         const map = mapRef.current
-        const latlng = e.latlng
+        const coord = evt.coordinate
 
         const first = drawingPoints.current[0]
-        const isClosing =
+        const isClosing = (
             first &&
-            map.latLngToLayerPoint(latlng).distanceTo(map.latLngToLayerPoint(first)) < 15 &&
+            map.getPixelFromCoordinate(coord) &&
+            map.getPixelFromCoordinate(first) &&
+            distance(map.getPixelFromCoordinate(coord), map.getPixelFromCoordinate(first)) < pixelSnapThreshold &&
             drawingPoints.current.length >= 3
+        )
 
         if (isClosing) {
+            drawingPoints.current.push(first)
             setClosedBySnap(true)
             endPolygon()
             return
         }
 
-        drawingPoints.current.push([latlng.lat, latlng.lng])
-        setTooltipText('Click para continuar dibujando')
+        drawingPoints.current.push(coord)
+        renderVertex(coord)
+        updatePolygonPreview()
+        updateAreaOverlay()
 
-        const marker = L.circleMarker(latlng, PARCELA_STYLES.draw.vertex).addTo(map)
-        vertexMarkers.current.push(marker)
+        if (drawingPoints.current.length > 0) {setFirstVertexDraw(true)} else {setFirstVertexDraw(false)}
 
-        if (drawingPoints.current.length > 1) {
-            if (currentPolygon.current) map.removeLayer(currentPolygon.current)
-                currentPolygon.current = L.polygon(drawingPoints.current, PARCELA_STYLES.draw.polygon).addTo(map)
-        }
+        const isFirst = drawingPoints.current.length === 1
+        const tooltipText = isFirst ? 'Click para continuar dibujando' : 'Click para cerrar polígono'
+        setTooltipText(tooltipText)
+        updateTooltipOverlay(tooltipText, coord)
+        setCanFinish(drawingPoints.current.length >= 3)
+    }).current
 
-        updateCanFinish()
-        updateAreaLabel()
-    }
-
-    const handleMouseMove = (e) => {
-        if (mode !== 'draw') return
+    const handleMouseMove = useRef((evt) => {
+        if (polygonGlobals.modeRef.current !== 'draw') return
         const map = mapRef.current
-        const latlng = e.latlng
+        const coord = evt.coordinate
         const first = drawingPoints.current[0]
-        const last = drawingPoints.current[drawingPoints.current.length - 1]
+        const dist = first ? distance(map.getPixelFromCoordinate(coord), map.getPixelFromCoordinate(first)) : Infinity
+        const isSnapping = dist < pixelSnapThreshold
 
-        if (!previewMarker.current) {
-            previewMarker.current = L.circleMarker(latlng, {
-                radius: 6,
-                color: '#666',
-                fillColor: '#ccc',
-                fillOpacity: 1,
-                weight: 1
-            }).addTo(map)
-        } else {
-            previewMarker.current.setLatLng(latlng)
-        }
+        const tooltipText = isSnapping
+            ? 'Click sobre el primer punto para cerrar'
+            : (drawingPoints.current.length === 0
+                ? 'Click para colocar el primer vértice'
+                : 'Click para continuar dibujando')
 
-        if (first && map.latLngToLayerPoint(latlng).distanceTo(map.latLngToLayerPoint(first)) < 15) {
-            previewMarker.current.setStyle({ color: 'green', fillColor: 'lime' })
-            setTooltipText('Click sobre el primer punto para cerrar')
-        } else {
-            previewMarker.current.setStyle({ color: '#666', fillColor: '#ccc' })
-            setTooltipText(
-                drawingPoints.current.length === 0
-                    ? 'Click para colocar el primer vértice'
-                    : 'Click para continuar dibujando'
-            )
-        }
+        setTooltipText(tooltipText)
+        updateTooltipOverlay(tooltipText, coord)
+        renderPreviewLine(coord)
+        renderPreviewVertex(coord, isSnapping)
+    }).current
 
-        if (drawingPoints.current.length > 0) {
-            if (!previewLine.current) {
-                previewLine.current = L.polyline([last, latlng], {
-                    color: '#ef4444',
-                    dashArray: '5, 5',
-                    weight: 3
-                }).addTo(map)
-            } else {
-                previewLine.current.setLatLngs([last, latlng])
-            }
-        }
-    }
-
-    const updateAreaLabel = () => {
-        const map = mapRef.current
-        if (drawingPoints.current.length < 3) {
-            areaLabel.current && map.removeLayer(areaLabel.current)
-            areaLabel.current = null
-            return
-        }
-
-        const polygon = L.polygon(drawingPoints.current)
-        const centroid = polygon.getBounds().getCenter()
-        const area = geodesicArea(drawingPoints.current)
-
-        setArea(area)
-
-        const text = `${(area / 10000).toFixed(2)} ha`
-
-        if (!areaLabel.current) {
-            areaLabel.current = L.tooltip({
-                permanent: true,
-                direction: 'center',
-                className: 'area-label'
-            })
-                .setLatLng(centroid)
-                .setContent(text)
-                .addTo(map)
-        } else {
-            areaLabel.current.setLatLng(centroid).setContent(text)
-        }
-    }
-
-    const removeLastPoint = () => {
-        const map = mapRef.current
-        drawingPoints.current.pop()
-
-        if (currentPolygon.current) {
-            map.removeLayer(currentPolygon.current)
-            currentPolygon.current = null
-        }
-
-        const last = vertexMarkers.current.pop()
-        if (last) map.removeLayer(last)
-
-        if (drawingPoints.current.length >= 2) {
-            currentPolygon.current = L.polygon(drawingPoints.current, PARCELA_STYLES.draw.polygon).addTo(map)
-        }
-
-        updateCanFinish()
-        updateAreaLabel()
-    }
-
-    const getCreatedLayer = () => {
-        return finalPolygon.current || null
-    }
-
-    useEffect(() => {
+    const enableDraw = () => {
         const map = mapRef.current
         if (!map) return
+
+        disableDraw()
+
+        if (vectorLayer.current) map.removeLayer(vectorLayer.current)
+
+        vectorSource.current = new VectorSource()
+        vectorLayer.current = new VectorLayer({ source: vectorSource.current })
+        map.addLayer(vectorLayer.current)
+
+        map.on('click', handleMapClick)
+        map.on('pointermove', handleMouseMove)
+        map.on('dblclick', handleMapDoubleClick)
+
+        resetAllState()
+        setMode('draw')
+        setTooltipText('Click para colocar el primer vértice')
+        document.body.classList.add('draw-mode')
+
+        if (areaLabelOverlay.current) {
+            map.removeOverlay(areaLabelOverlay.current)
+            areaLabelOverlay.current = null
+        }
+
+        if (tooltipOverlay.current) {
+            map.removeOverlay(tooltipOverlay.current)
+            tooltipOverlay.current = null
+        }
+    }
+
+    const endPolygon = () => {
+        const map = mapRef.current
+        if (!map || drawingPoints.current.length < 3) return
     
-        if (mode === 'draw') {
-            map.on('click', handleClick)
-            map.on('mousemove', handleMouseMove)
+        // Cierre del anillo si no fue cerrado por SNAP
+        const first = drawingPoints.current[0]
+        const last = drawingPoints.current[drawingPoints.current.length - 1]
+        if (first && last && distance(first, last) > 1) {
+            drawingPoints.current.push(first)
         }
     
-        return () => {
-            map.off('click', handleClick)
-            map.off('mousemove', handleMouseMove)
+        // Limpieza de previews
+        if (vectorSource.current) {
+            vertexFeatures.current.forEach(f => vectorSource.current.removeFeature(f))
+            if (previewLine.current) vectorSource.current.removeFeature(previewLine.current)
+            if (previewVertex.current) vectorSource.current.removeFeature(previewVertex.current)
+            vectorSource.current.getFeatures().forEach(f => {
+                if (f.getGeometry() instanceof Polygon) {
+                    vectorSource.current.removeFeature(f)
+                }
+            })
         }
-    }, [mode])
     
+        // Crear feature
+        const polygon = new Polygon([drawingPoints.current])
+        finalFeature.current = new Feature(polygon)
+        vectorSource.current.addFeature(finalFeature.current)
+    
+        // Limpieza de overlays
+        if (tooltipOverlay.current) {
+            map.removeOverlay(tooltipOverlay.current)
+            tooltipOverlay.current = null
+        }
+    
+        document.body.classList.remove('draw-mode')
+        setMode('draw-finished')
+        setTooltipText('')
+        drawingPoints.current = []
+        vertexFeatures.current = []
+        previewLine.current = null
+        previewVertex.current = null
+        setCanFinish(false)
+    
+        // Callback para activar edición
+        if (typeof polygonGlobals.onFinishCallback.current === 'function') {
+            polygonGlobals.onFinishCallback.current(finalFeature.current)
+        }
+    }
+    
+    const disableDraw = () => {
+        const map = mapRef.current
+        if (!map) return
+
+        map.on('click', handleMapClick)
+        map.on('pointermove', handleMouseMove)
+        map.on('dblclick', handleMapDoubleClick)
+
+        resetAllState()
+        
+        if (tooltipOverlay.current) {
+            map.removeOverlay(tooltipOverlay.current)
+            tooltipOverlay.current = null
+        }
+
+        document.body.classList.remove('draw-mode')
+        setMode(null)
+        setTooltipText('')
+
+        if (areaLabelOverlay.current) {
+            map.removeOverlay(areaLabelOverlay.current)
+            areaLabelOverlay.current = null
+        }
+
+        if (vectorLayer.current) {
+            map.removeLayer(vectorLayer.current)
+            vectorLayer.current = null
+            vectorSource.current = null
+        }
+
+        document.body.classList.remove('draw-mode')
+    }
+
+    const cancelDraw = () => disableDraw()
+
+    const removeLastPoint = () => {
+        if (!drawingPoints.current.length) return
+    
+        // Quitar último punto y vértice visual
+        drawingPoints.current.pop()
+        const lastVertex = vertexFeatures.current.pop()
+        if (lastVertex && vectorSource.current) {
+            vectorSource.current.removeFeature(lastVertex)
+        }
+    
+        // Borrar línea de preview
+        if (previewLine.current && vectorSource.current) {
+            vectorSource.current.removeFeature(previewLine.current)
+            previewLine.current = null
+        }
+    
+        // Borrar polígono de preview viejo
+        if (vectorSource.current) {
+            vectorSource.current.getFeatures().forEach(f => {
+                if (f.getGeometry() instanceof Polygon) {
+                    vectorSource.current.removeFeature(f)
+                }
+            })
+        }
+    
+        // Volver a renderizar el polígono si quedan al menos 2 puntos
+        if (drawingPoints.current.length >= 2) {
+            const polygonFeature = new Feature(new Polygon([drawingPoints.current]))
+            polygonFeature.setStyle(PARCELA_STYLES.draw)
+            vectorSource.current.addFeature(polygonFeature)
+        }
+    
+        // Volver a dibujar línea si hay al menos 1 punto
+        if (drawingPoints.current.length >= 1 && tooltipOverlay.current) {
+            const mouseCoord = tooltipOverlay.current.getPosition()
+            if (mouseCoord) renderPreviewLine(mouseCoord)
+        }
+    
+        updateAreaOverlay()
+        setFirstVertexDraw(drawingPoints.current.length > 0)
+        setCanFinish(drawingPoints.current.length >= 3)
+    }    
+    
+    const getCreatedFeature = () => finalFeature.current || null
+
+    useEffect(() => disableDraw, [])
 
     return {
         enableDraw,
@@ -221,8 +369,15 @@ export function useDrawTool(mapRef, { mode, setMode, setArea, setTooltipText }) 
         cancelDraw,
         endPolygon,
         removeLastPoint,
+        getCreatedFeature,
         canFinish,
         closedBySnap,
-        getCreatedLayer
+        firstVertexDraw
     }
+}
+
+function distance(p1, p2) {
+    const dx = p1[0] - p2[0]
+    const dy = p1[1] - p2[1]
+    return Math.sqrt(dx * dx + dy * dy)
 }
