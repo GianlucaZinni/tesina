@@ -1,3 +1,4 @@
+// hooks/polygonTools/draw.js
 import { useEffect, useRef, useState } from 'react'
 import { Feature } from 'ol'
 import { Polygon, Point, LineString } from 'ol/geom'
@@ -19,6 +20,7 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
     const vectorSource = useRef(null)
     const vectorLayer = useRef(null)
     const finalFeature = useRef(null)
+    const isDrawingActive = useRef(false);
 
     const [canFinish, setCanFinish] = useState(false)
     const [closedBySnap, setClosedBySnap] = useState(false)
@@ -40,6 +42,7 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
     }
 
     const handleMapDoubleClick = useRef((evt) => {
+        if (!isDrawingActive.current) return;
         if (polygonGlobals.modeRef.current !== 'draw') return
     
         if (drawingPoints.current.length >= 3) {
@@ -73,7 +76,7 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
             previewVertex.current.getGeometry().setCoordinates(coord)
         }
 
-        previewVertex.current.setStyle(isSnapping ? PARCELA_STYLES.vertexSnap : PARCELA_STYLES.previewVertex)
+        previewVertex.current.setStyle(isSnapping ? PARCELA_STYLES.previewVertexSnap : PARCELA_STYLES.previewVertex)
     }
 
     const renderVertex = (coord) => {
@@ -146,6 +149,7 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
     }
 
     const handleMapClick = useRef((evt) => {
+        if (!isDrawingActive.current) return;
         if (polygonGlobals.modeRef.current !== 'draw') return
         const map = mapRef.current
         const coord = evt.coordinate
@@ -181,6 +185,7 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
     }).current
 
     const handleMouseMove = useRef((evt) => {
+        if (!isDrawingActive.current) return;
         if (polygonGlobals.modeRef.current !== 'draw') return
         const map = mapRef.current
         const coord = evt.coordinate
@@ -207,10 +212,10 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
         disableDraw()
 
         if (vectorLayer.current) map.removeLayer(vectorLayer.current)
-
+        
         vectorSource.current = new VectorSource()
         vectorLayer.current = new VectorLayer({ source: vectorSource.current })
-        map.addLayer(vectorLayer.current)
+        map.addLayer(vectorLayer.current)        
 
         map.on('click', handleMapClick)
         map.on('pointermove', handleMouseMove)
@@ -230,6 +235,8 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
             map.removeOverlay(tooltipOverlay.current)
             tooltipOverlay.current = null
         }
+
+        isDrawingActive.current = true;
     }
 
     const endPolygon = () => {
@@ -312,6 +319,7 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
         }
 
         document.body.classList.remove('draw-mode')
+        isDrawingActive.current = false;
     }
 
     const cancelDraw = () => disableDraw()

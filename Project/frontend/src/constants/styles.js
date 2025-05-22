@@ -1,3 +1,4 @@
+// constants/styles.js
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style'
 
 export const PARCELA_STYLES = {
@@ -7,101 +8,85 @@ export const PARCELA_STYLES = {
             width: 5
         }),
         fill: new Fill({
-            color: 'rgba(0,0,0,0)' // Sin relleno
+            color: 'rgba(255, 255, 255, 0.05)' // leve fondo claro
         })
     }),
 
     draw: new Style({
         stroke: new Stroke({
-            color: '#FF9B00',
-            width: 5
+            color: '#FF4D00', // violeta
+            width: 4,
+            lineDash: [0,0,10,10]
         }),
         fill: new Fill({
-            color: 'rgba(255, 155, 0, 0.2)'
+            color: 'rgba(255, 77, 0, 0.2)' // violeta transparente
         })
     }),
 
     edit: new Style({
         stroke: new Stroke({
-            color: '#e92694',
-            width: 5,
+            color: '#00FFFF', // celeste
+            width: 4,
+            lineDash: [0,0,10,10]
         }),
         fill: new Fill({
-            color: 'rgba(233, 38, 148, 0.2)'
+            color: 'rgba(0, 255, 255, 0.15)'
         })
     }),
-
-    created: new Style({
-        stroke: new Stroke({
-            color: '#2cf5dc',
-            width: 5
-        }),
-        fill: new Fill({
-            color: 'rgba(121, 242, 227, 0.2)'
-        })
-    }),
-
-    vertex: new Style({
-        image: new CircleStyle({
-            radius: 6,
-            fill: new Fill({ color: '#3b82f6' }),
-            stroke: new Stroke({ color: '#8E1358', width: 1 })
-        })
-    }),
-
+    
     vertexEdit: new Style({
         image: new CircleStyle({
             radius: 6,
-            fill: new Fill({ color: '#C60AB2' }), // magenta fuerte
-            stroke: new Stroke({ color: '#8E1358', width: 1 })
+            fill: new Fill({ color: '#00FFFF' }), // celeste
+            stroke: new Stroke({ color: '#FFFFFF', width: 3 })
         })
     }),
-    
+
     vertexIntermediate: new Style({
         image: new CircleStyle({
-            radius: 4,
-            fill: new Fill({ color: '#D0D0D0' }), // gris claro
-            stroke: new Stroke({ color: '#888888', width: 1 })
+            radius: 4.5,
+            fill: new Fill({ color: '#777777' }), // gris oscuro
+            stroke: new Stroke({ color: '#FFFFFF', width: 2.5 }) // borde blanco
         })
     }),
-    
+
     vertexDelete: new Style({
         image: new CircleStyle({
             radius: 6,
-            fill: new Fill({ color: '#f87171' }), // rojo claro
-            stroke: new Stroke({ color: '#dc2626', width: 1.5 })
+            fill: new Fill({ color: '#860000' }), 
+            stroke: new Stroke({ color: '#FF0000', width: 4 }) // rojo oscuro
         })
     }),
 
     vertexDraw: new Style({
         image: new CircleStyle({
             radius: 6,
-            fill: new Fill({ color: '#714808' }),
-            stroke: new Stroke({ color: '#A0660C', width: 1 })
+            fill: new Fill({ color: '#FF4D00' }), // naranja
+            stroke: new Stroke({ color: '#FFFFFF', width: 3 }) // blanco
         })
     }),
 
     previewVertex: new Style({
         image: new CircleStyle({
             radius: 6,
-            fill: new Fill({ color: '#ccc' }),
-            stroke: new Stroke({ color: '#666', width: 1 })
+            fill: new Fill({ color: '#777777' }), // gris oscuro
+            stroke: new Stroke({ color: '#FFFFFF', width: 3 }) // borde blanco
         })
     }),
 
     previewVertexSnap: new Style({
         image: new CircleStyle({
             radius: 6,
-            fill: new Fill({ color: 'lime' }),
-            stroke: new Stroke({ color: 'green', width: 1 })
+            fill: new Fill({ color: '#FFFFFF' }), // blanco
+            stroke: new Stroke({ color: '#FF4D00', width: 3 }) // naranja
         })
     }),
 
     previewLine: new Style({
         stroke: new Stroke({
-            color: '#FF5722',
+            color: '#FF8300', // naranja
             width: 4,
-            lineDash: [6, 6]
+            lineDash: [0,0,10,10]
         })
-    }),
+    })
 }

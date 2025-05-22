@@ -1,3 +1,4 @@
+# run.py
 from Project import create_app, db
 from database.scripts.function import load_data
 import os

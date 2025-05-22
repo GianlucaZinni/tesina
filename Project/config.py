@@ -1,3 +1,4 @@
+# Project/config.py
 import os
 
 class Config:
@@ -13,3 +14,7 @@ class Config:
 
     UPLOAD_FOLDER = os.path.join(ROOT_DIR, 'Project/static/images')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = False  # True si usás HTTPS
+    SESSION_COOKIE_DOMAIN = "127.0.0.1"

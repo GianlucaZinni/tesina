@@ -1,3 +1,4 @@
+// hooks/polygonTools/general.js
 import { useState } from 'react'
 
 // Refs globales para ser accedidos desde cualquier hook

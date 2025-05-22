@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 /* Asegurar 100% de altura real */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -69,29 +71,6 @@ button:focus-visible {
   }
 }
 
-.vertex-marker {
-  width: 10px;
-  height: 10px;
-  background-color: #8e1358;
-  border: 2px solid #3b82f6; /* azul destacado */
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px white; /* contorno claro para visibilidad */
-}
-
-.vertex-marker.deletable {
-  cursor: pointer;
-}
-
-.intermediate-marker {
-  width: 8px;
-  height: 8px;
-  background-color: #bbb;
-  border: 1px solid white;
-  border-radius: 50%;
-  opacity: 0.9;
-}
-
-
 @keyframes slide-in-left {
   0% {
     transform: translateX(-100%);
@@ -120,30 +99,25 @@ button:focus-visible {
 
 @keyframes ripple-expand {
   to {
-      transform: translate(-50%, -50%) scale(8);
-      opacity: 0;
+    transform: translate(-50%, -50%) scale(8);
+    opacity: 0;
   }
-}
-
-/* Animación del ícono */
-.marker-appear {
-  animation: marker-bounce-in 0.8s ease forwards;
 }
 
 @keyframes marker-bounce-in {
   0% {
-      transform: translateY(-50px) scale(0.5);
-      opacity: 0;
+    transform: translateY(-50px) scale(0.5);
+    opacity: 0;
   }
   50% {
-      transform: translateY(0px) scale(1.1);
-      opacity: 1;
+    transform: translateY(0px) scale(1.1);
+    opacity: 1;
   }
   70% {
-      transform: translateY(-10px) scale(1);
+    transform: translateY(-10px) scale(1);
   }
   100% {
-      transform: translateY(0px) scale(1);
+    transform: translateY(0px) scale(1);
   }
 }
 
@@ -185,12 +159,12 @@ body.draw-mode {
 }
 
 .cursor-draw::after {
-  content: '';
+  content: "";
   position: fixed;
   width: 12px;
   height: 12px;
-  background: #FF9B00;
-  border: 2px solid #A0660C;
+  background: #ff9b00;
+  border: 2px solid #a0660c;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -206,4 +180,12 @@ body.draw-mode {
   white-space: nowrap;
   user-select: none;
   pointer-events: none;
+}
+
+#map {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: auto !important;
+  touch-action: auto !important;
 }

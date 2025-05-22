@@ -1,37 +1,25 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-
-import Header from './components/Header'
-import Footer from './components/Footer'
-
-import MapView from './views/MapView'
-import ParcelaView from './views/ParcelaView'
-import CampoView from './views/CampoView'
-
-import { useMenuControl } from './components/Header'
+import AppRoutes from './AppRoutes.jsx';
+import { useAuth } from './context/AuthContext';
+import { CampoProvider } from './context/CampoContext';
+import { MapProvider } from './context/MapContext';
 
 export default function App() {
-  const { menuOpen, setMenuOpen } = useMenuControl()
-  return (
-    <Router>
-      <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      <Routes>
-        <Route path="/mapa" element={<MapView />} />
-        <Route path="/collares" element={<Placeholder label="Collares" />} />
-        <Route path="/parcelas" element={<ParcelaView />} />
-        <Route path="/alertas" element={<Placeholder label="Alertas" />} />
-        <Route path="/animales" element={<Placeholder label="Animales" />} />
-        <Route path="/campos" element={<CampoView />} />
-        <Route path="*" element={<MapView />} />
-      </Routes>
-      <Footer setMenuOpen={setMenuOpen} />
-    </Router>
-  )
-}
+  const { isAuthenticated, loading } = useAuth();
 
-function Placeholder({ label }) {
+  // Mientras carga la sesión, no renderizamos nada
+  if (loading) return <div className="p-4">Verificando sesión...</div>;
+
+  // Si no está autenticado, renderizamos solo las rutas (LoginView)
+  if (!isAuthenticated) {
+    return <AppRoutes />;
+  }
+
+  // Si está autenticado, renderizamos el mapa + rutas
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-3xl font-bold">{label}</h1>
-    </div>
-  )
+    <MapProvider>
+      <CampoProvider>
+        <AppRoutes />
+      </CampoProvider>
+    </MapProvider>
+  );
 }

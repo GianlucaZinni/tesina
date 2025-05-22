@@ -1,0 +1,92 @@
+├── public/                 # Archivos estáticos (favicon, imágenes públicas)
+├── src/
+│   ├── api/                # Módulos para interactuar con la API RESTful
+│   │   ├── services/       # Funciones específicas para cada recurso de la API
+│   │   │   ├── campoService.js
+│   │   │   ├── parcelaService.js
+│   │   │   └── authService.js (si aplica)
+│   │   └── apiClient.js    # Instancia de Axios o fetch configurada (base URL, interceptores)
+│   │
+│   ├── assets/             # Recursos estáticos locales (imágenes, iconos, fuentes)
+│   │   ├── images/
+│   │   └── icons/
+│   │
+│   ├── components/         # Componentes React reutilizables y atómicos
+│   │   ├── common/         # Componentes genéricos, no específicos de la aplicación
+│   │   │   ├── Button/
+│   │   │   │   └── Button.jsx
+│   │   │   ├── Input/
+│   │   │   │   └── Input.jsx
+│   │   │   └── Spinner/
+│   │   │       └── Spinner.jsx
+│   │   ├── ui/             # Componentes de UI más complejos (CampoSelector, Modal)
+│   │   │   ├── CampoSelector/
+│   │   │   │   └── CampoSelector.jsx
+│   │   │   ├── Forms/      # Componentes de formulario reutilizables
+│   │   │   │   ├── FormsMap.jsx
+│   │   │   ├── Navigation/
+│   │   │   │   ├── FooterMenuItem.jsx
+│   │   │   │   ├── Header.jsx
+│   │   │   │   └── FooterMenu.jsx
+│   │   │   └── MapControls/
+│   │   │       ├── CompassButton.jsx
+│   │   │       ├── DrawToolPanel.jsx
+│   │   │       └── FloatingButtons.jsx
+│   │   │
+│   │   ├── specific/       # Componentes específicos de la lógica de negocio (pero no vistas completas)
+│   │   │   ├── CampoCard.jsx
+│   │   │   ├── ParcelaListItem.jsx
+│   │   │   └── MapLegend.jsx
+│   │   │
+│   ├── config/             # Archivos de configuración de la aplicación (variables de entorno, constantes globales)
+│   │   └── appConfig.js
+│   │
+│   ├── context/            # Contextos de React para gestión de estado global
+│   │   ├── CampoContext.jsx
+│   │   ├── MapContext.jsx
+│   │   └── AuthContext.jsx (si aplica)
+│   │
+│   ├── hooks/              # Hooks personalizados para lógica reutilizable
+│   │   ├── useMapParcelas.js
+│   │   ├── usePolygonTools.js
+│   │   ├── useCampoData.js (para encapsular lógica de fetching de Campo)
+│   │   ├── useDebounce.js (ejemplo de hook utilitario)
+│   │   └── index.js        # Archivo de exportación para facilitar las importaciones
+│   │
+│   ├── layouts/            # Layouts para estructurar las páginas (ej. con sidebar, header/footer)
+│   │   └── MainLayout.jsx
+│   │
+│   ├── views/              # Páginas principales (que usan layouts y componen vistas)
+│   │   ├── map/            
+│   │   │   ├── CampoView.jsx      
+│   │   │   ├── ParcelaView.jsx   
+│   │   │   ├── MapView.jsx       
+│   │   ├── main/            
+│   │   │   └── HomeView.jsx      
+│   │   └── user/             
+│   │       └── LoginView.jsx      
+│   │
+│   ├── styles/             # Estilos globales y de Tailwind CSS
+│   │   ├── tailwind.css    # Directivas de Tailwind CSS
+│   │   ├── base.css        # Estilos base/resets
+│   │   └── utilities.css   # Clases utilitarias personalizadas
+│   │
+│   ├── utils/              # Funciones utilitarias que no son hooks ni componentes
+│   │   ├── geometry.js     # Funciones relacionadas con geometría (e.g., conversión de coordenadas)
+│   │   ├── mapIcon.js      # Lógica para la creación de iconos de mapa
+│   │   ├── validation.js   # Funciones de validación de formularios
+│   │   ├── helpers.js      # Funciones auxiliares diversas
+│   │   └── index.js        # Archivo de exportación para facilitar las importaciones
+│   │
+│   ├── main.jsx            # Punto de entrada de la aplicación (ReactDOM.render)
+│   ├── App.jsx             # Componente raíz de la aplicación (manejo de rutas)
+│   └── routes.jsx          # Definición de rutas (si usas react-router-dom)
+│
+├── .gitignore
+├── index.html
+├── package.json
+├── package-lock.json
+├── postcss.config.js
+├── README.md
+├── tailwind.config.js
+└── vite.config.js

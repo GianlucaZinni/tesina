@@ -1,3 +1,4 @@
+// hooks/polygonTools/change.js
 import { useRef } from 'react'
 import { Feature } from 'ol'
 import { Point, Polygon } from 'ol/geom'
@@ -158,7 +159,7 @@ export function useChangeTool(mapRef, { setMode }, onUpdate = () => {}) {
         cleanCoords.forEach((coord, index) => {
             const vertex = new Feature(new Point(coord))
             vertex.set('vertexIndex', index)
-            vertex.setStyle(PARCELA_STYLES.vertexEdit)
+            vertex.setStyle(isDeleteMode.current ? PARCELA_STYLES.vertexDelete : PARCELA_STYLES.vertexEdit)
             vSource.addFeature(vertex)
             vertexFeatures.current.push(vertex)
         })
@@ -193,6 +194,10 @@ export function useChangeTool(mapRef, { setMode }, onUpdate = () => {}) {
             filter: f => f.getGeometry().getType() === 'Point'
         })
 
+        vertexFeatures.current.forEach(vertex => {
+            vertex.setStyle(PARCELA_STYLES.vertexDelete)
+        })
+
         select.on('select', e => {
             const marker = e.selected[0]
             const index = marker?.get('vertexIndex')
@@ -220,6 +225,10 @@ export function useChangeTool(mapRef, { setMode }, onUpdate = () => {}) {
         map.removeInteraction(selectInteraction.current)
         selectInteraction.current = null
         isDeleteMode.current = false
+
+        vertexFeatures.current.forEach(vertex => {
+            vertex.setStyle(PARCELA_STYLES.vertexEdit)
+        })
 
         const main = getMainFeature()
         if (main) drawVertices(getMainCoords())

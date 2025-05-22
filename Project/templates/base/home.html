@@ -1,3 +1,4 @@
+<!-- Project/templates/base/home.html -->
 {% include "base/layout.html" %}
 {% include "base/navbar.html" %}
 {% block onecontent %}
@@ -11,15 +12,6 @@
                 <div>
                     <button onclick="window.location.href='{{ url_for('home.default') }}';" type="button" class="del_upd_add_button btn btn-sm" style="width: 100%; border-radius: 10px !important; height: fit-content;">
                         Ver Mapa <i class="fa-solid fa-solid fa-map-marked-alt" style="font-size:25px"></i>
-                    </button>
-                    <button onclick="window.location.href='{{ url_for('config.campo') }}';" type="button" class="del_upd_add_button btn btn-sm" style="width: 100%; border-radius: 10px !important; height: fit-content;">
-                        Configurar Campos <i class="fa-solid fa-map-pin" style="font-size:25px"></i>
-                    </button>
-                    <button onclick="window.location.href='{{ url_for('config.parcela') }}';" type="button" class="del_upd_add_button btn btn-sm" style="width: 100%; border-radius: 10px !important; height: fit-content;">
-                        Configurar Parcelas <i class="fa-solid fa-map-signs" style="font-size:25px"></i>
-                    </button>
-                    <button onclick="window.location.href='{{ url_for('config.animal') }}';" type="button" class="del_upd_add_button btn btn-sm" style="width: 100%; border-radius: 10px !important; height: fit-content;">
-                        Cargar Animales <i class="fa-solid fa-cow" style="font-size:25px"></i>
                     </button>
                 </div>
             </div>
