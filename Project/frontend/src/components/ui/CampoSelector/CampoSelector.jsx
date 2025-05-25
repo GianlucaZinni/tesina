@@ -35,7 +35,7 @@ export default function CampoSelector({
                 <div className="flex flex-col text-left">
 
                     <span className="text-xs text-gray-300">
-                        {campoId && campos[campoId] ? campos[campoId].nombre : 'Seleccionar campo'}
+                        {(campoId && campos[campoId]) ? campos[campoId].nombre : 'Creando nuevo campo'}
                     </span>
 
                     {parcelaId && campoId ? (
@@ -46,14 +46,13 @@ export default function CampoSelector({
                                 {(areaParcela / 10000).toFixed(2)} ha
                             </span>
                         </div>
-                    ) : campoId ? (
+                    ) : campoId && campos[campoId] ? (
                         <span className="text-xs text-green-400">
                             {(areaCampo / 10000).toFixed(2)} ha
                         </span>
-                    ) :
-                        <span className="text-xs text-green-400">
-                            0.00 ha
-                        </span>}
+                    ) : (
+                        <span className="text-xs text-green-400">0.00 ha</span>
+                    )}
                 </div>
                 <ChevronDown size={16} className="text-white" />
             </button>

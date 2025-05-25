@@ -34,7 +34,8 @@ export default function CampoView() {
 
     const { 
         campoSeleccionado, 
-        setCampoSeleccionado 
+        setCampoSeleccionado,
+        setLastCampoId,
     } = useContext(CampoContext);
 
     const {
@@ -79,12 +80,14 @@ export default function CampoView() {
         const { name, value } = e.target;
 
         if (name === 'campo_id' && value === '') {
+            if (campoSeleccionado) {
+                setLastCampoId(campoSeleccionado);
+            }
             limpiarMarcadorGps();
             setCampoSeleccionado(null);
             setFormCampo({ campo_id: '', nombre: '', descripcion: '', lat: '', lon: '' });
             return;
         }
-
         if (name === 'campo_id') {
             if (value === '') {
                 limpiarMarcadorGps();

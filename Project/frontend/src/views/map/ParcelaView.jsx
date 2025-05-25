@@ -41,7 +41,8 @@ export default function ParcelaView() {
 
     const { 
         campoSeleccionado, 
-        setCampoSeleccionado 
+        setCampoSeleccionado, 
+        lastCampoId 
     } = useContext(CampoContext);
 
     const {
@@ -249,7 +250,35 @@ export default function ParcelaView() {
             setAreaParcela(0);
         }
     }, [campoSeleccionado]);    
-    
+
+    useEffect(() => {
+        if (
+            !formData.campo_id &&
+            !campoSeleccionado &&
+            lastCampoId &&
+            campos[lastCampoId]
+        ) {
+            setCampoSeleccionado(lastCampoId);
+            setFormData(prev => ({
+                ...prev,
+                campo_id: lastCampoId,
+                parcela_id: '',
+                nombre: '',
+                descripcion: ''
+            }));
+            setAreaParcela(0);
+        }
+    }, []);
+
+    useEffect(() => {
+        const id = formData.campo_id;
+        const campo = !campoSeleccionado && id && campos[id];
+        if (campo) {
+            setCampoSeleccionado(id);
+            mapRef.current.getView().setCenter(fromLonLat([campo.lon, campo.lat]));
+        }
+    }, [formData.campo_id, campoSeleccionado]);
+
     return (
         <>
             <div className="absolute top-4 left-4 z-40 flex flex-row-reverse items-end gap-2">

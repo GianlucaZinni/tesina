@@ -4,6 +4,7 @@ import { useEffect, useContext, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
 import { updateParcela, fetchParcelaInit } from '../../api/services/parcelaService';
+import { fromLonLat } from '../../api/services/mapService';
 
 import FloatingButtons from '../../components/ui/MapControls/FloatingButtons';
 import { ModalInfo } from '../../components/common/Modals';
@@ -14,6 +15,7 @@ import { useMapParcelas } from '../../hooks/useMapParcelas';
 import useViewCleanup from '../../hooks/useViewCleanup';
 
 import { MapContext } from '../../context/MapContext';
+import { CampoContext } from '../../context/CampoContext';
 
 import { calculatePolygonAreaFromGeometry } from '../../utils/geometry';
 
@@ -30,6 +32,7 @@ export default function MapView() {
     } = useContext(MapContext);
 
     const {
+        campos,
         parcelas,
         formData,
         setFormData,
@@ -37,6 +40,12 @@ export default function MapView() {
         setAreaParcela,
         setAreaCampo
     } = useOutletContext();
+
+    const { 
+        campoSeleccionado, 
+        setCampoSeleccionado, 
+        lastCampoId 
+    } = useContext(CampoContext);
 
     const {
         disableDraw,
@@ -143,6 +152,34 @@ export default function MapView() {
         if (!ready || !formData.campo_id) return;
         setFeaturesOnMap();
     }, [ready, formData.campo_id, formData.parcela_id, parcelas]);
+
+    useEffect(() => {
+        if (
+            !formData.campo_id &&
+            !campoSeleccionado &&
+            lastCampoId &&
+            campos[lastCampoId]
+        ) {
+            setCampoSeleccionado(lastCampoId);
+            setFormData(prev => ({
+                ...prev,
+                campo_id: lastCampoId,
+                parcela_id: '',
+                nombre: '',
+                descripcion: ''
+            }));
+            setAreaParcela(0);
+        }
+    }, []);
+
+    useEffect(() => {
+        const id = formData.campo_id;
+        const campo = !campoSeleccionado && id && campos[id];
+        if (campo) {
+            setCampoSeleccionado(id);
+            mapRef.current.getView().setCenter(fromLonLat([campo.lon, campo.lat]));
+        }
+    }, [formData.campo_id, campoSeleccionado]);
 
     return (
         <>

@@ -10,7 +10,7 @@ import { fromLonLat } from '../api/services/mapService';
 
 export default function MapLayout() {
     const { mapRef } = useContext(MapContext);
-    const { campoSeleccionado, setCampoSeleccionado } = useContext(CampoContext);
+    const { campoSeleccionado, setCampoSeleccionado, lastCampoId } = useContext(CampoContext);
 
     const [campos, setCampos] = useState({});
     const [parcelas, setParcelas] = useState({});
@@ -25,8 +25,12 @@ export default function MapLayout() {
             setCampos(data.campos);
             setParcelas(data.parcelas);
             const defaultCampo = data.campo_preferido_id || Object.keys(data.campos)[0];
-            setCampoSeleccionado(defaultCampo);
-            setFormData(prev => ({ ...prev, campo_id: defaultCampo }));
+            const campoInicial = campoSeleccionado ?? lastCampoId ?? defaultCampo;
+    
+            if (campoInicial) {
+                setCampoSeleccionado(campoInicial);
+                setFormData(prev => ({ ...prev, campo_id: campoInicial }));
+            }
         }
         init();
     }, []);
@@ -37,7 +41,6 @@ export default function MapLayout() {
                 <LateralButtons
                     mapRef={mapRef}
                     onToggleLayer={() => {
-                        const map = mapRef.current;
                         const osm = window.osm;
                         const sat = window.esriSat;
                         if (osm && sat) {
