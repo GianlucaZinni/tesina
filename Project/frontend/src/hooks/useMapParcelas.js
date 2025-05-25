@@ -1,4 +1,4 @@
-// hooks/useMapParcelas.js
+// src/hooks/useMapParcelas.js
 import { useEffect, useRef } from 'react'
 import GeoJSON from 'ol/format/GeoJSON'
 import VectorSource from 'ol/source/Vector'
@@ -91,9 +91,15 @@ export function useMapParcelas({
         clearEdit()
         clearParcelas()
     
-        if (clickHandlerRef.current) map.un('click', clickHandlerRef.current)
-        map.on('click', handleParcelClick)
-        clickHandlerRef.current = handleParcelClick
+        if (clickHandlerRef.current) {
+            map.un('click', clickHandlerRef.current)
+            clickHandlerRef.current = null
+        }
+        
+        if (!modoVisualizacionCampo) {
+            map.on('click', handleParcelClick)
+            clickHandlerRef.current = handleParcelClick
+        }
     
         const lista = parcelas[formData.campo_id] || []
         const format = new GeoJSON()

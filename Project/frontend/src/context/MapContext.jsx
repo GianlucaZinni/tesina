@@ -1,4 +1,4 @@
-// context/MapContext.jsx
+// src/context/MapContext.jsx
 import { createContext, useRef, useEffect, useState, useCallback } from 'react'
 import { createBaseMap } from '../api/services/mapService'
 

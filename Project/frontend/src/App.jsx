@@ -1,3 +1,4 @@
+// App.jsx
 import AppRoutes from './AppRoutes.jsx';
 import { useAuth } from './context/AuthContext';
 import { CampoProvider } from './context/CampoContext';

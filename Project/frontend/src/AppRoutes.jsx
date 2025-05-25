@@ -1,5 +1,5 @@
+// AppRoutes.jsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-
 import Header from './components/ui/Navigation/Header';
 import Footer from './components/ui/Navigation/Footer';
 import LoginView from './views/users/LoginView';
@@ -9,6 +9,7 @@ import CampoView from './views/map/CampoView';
 
 import { useMenuControl } from './components/ui/Navigation/Header';
 import { useAuth } from './context/AuthContext';
+import MapLayout from './layouts/MapLayout';
 
 export default function AppRoutes() {
     const location = useLocation();
@@ -20,9 +21,17 @@ export default function AppRoutes() {
             {!isLogin && <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />}
             <Routes>
                 <Route path="/login" element={<LoginView />} />
-                <Route path="/mapa" element={<ProtectedRoute><MapView /></ProtectedRoute>} />
-                <Route path="/parcelas" element={<ProtectedRoute><ParcelaView /></ProtectedRoute>} />
-                <Route path="/campos" element={<ProtectedRoute><CampoView /></ProtectedRoute>} />
+                <Route
+                    element={
+                        <ProtectedRoute>
+                            <MapLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/mapa" element={<MapView />} />
+                    <Route path="/parcelas" element={<ParcelaView />} />
+                    <Route path="/campos" element={<CampoView />} />
+                </Route>
                 <Route path="/collares" element={<ProtectedRoute><Placeholder label="Collares" /></ProtectedRoute>} />
                 <Route path="/alertas" element={<ProtectedRoute><Placeholder label="Alertas" /></ProtectedRoute>} />
                 <Route path="/animales" element={<ProtectedRoute><Placeholder label="Animales" /></ProtectedRoute>} />
