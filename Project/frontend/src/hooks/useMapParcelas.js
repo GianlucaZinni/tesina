@@ -1,8 +1,9 @@
-// src/hooks/useMapParcelas.js
+// ~/Project/frontend/src/hooks/useMapParcelas.js
 import { useEffect, useRef } from 'react'
 import GeoJSON from 'ol/format/GeoJSON'
 import VectorSource from 'ol/source/Vector'
 import VectorLayer from 'ol/layer/Vector'
+import { polygonGlobals } from '../hooks/polygonTools/general';
 import { calculatePolygonAreaFromGeometry } from '../utils/geometry'
 import { PARCELA_STYLES } from '../constants/styles'
 
@@ -17,7 +18,8 @@ export function useMapParcelas({
     setAreaCampo,
     setAreaParcela,
     enabled = true,
-    modoVisualizacionCampo = false
+    modoVisualizacionCampo = false,
+    onSelectFeature = null,
 }) {
 
     const clickHandlerRef = useRef(null)
@@ -39,6 +41,7 @@ export function useMapParcelas({
     }
 
     const handleParcelClick = (e) => {
+        if (['draw', 'draw-edit'].includes(polygonGlobals.modeRef.current)) return;
         const map = mapRef.current
         if (!map) return
 
@@ -78,6 +81,17 @@ export function useMapParcelas({
                 const clone = feature.clone()
                 clone.setId(parcela.id)
                 activateEditMode(clone)
+                try {
+                    const clone = feature.clone()
+                    clone.setId(parcela.id)
+                    activateEditMode(clone)
+                
+                    if (typeof onSelectFeature === 'function') {
+                        onSelectFeature(clone, parcela);
+                    }
+                } catch (err) {
+                    console.error('Error al clonar feature:', err)
+                }
             } catch (err) {
                 console.error('Error al clonar feature:', err)
             }
@@ -145,17 +159,21 @@ export function useMapParcelas({
             setAreaCampo(areaTotal)
             setAreaParcela(0)
         } else {
-            const p = lista.find(p => p.id == formData.parcela_id)
+            const p = lista.find(p => p.id == formData.parcela_id);
             if (p) {
                 try {
-                    const f = format.readFeature(p, { featureProjection: 'EPSG:3857' })
-                    if (!f.getGeometry()) return
-                    f.setId(p.id)
-                    activateEditMode(f)
-                    const area = calculatePolygonAreaFromGeometry(f.getGeometry())
-                    setAreaParcela(area)
+                    const f = format.readFeature(p, { featureProjection: 'EPSG:3857' });
+                    if (!f.getGeometry()) return;
+                    f.setId(p.id);
+                    activateEditMode(f);
+                    const area = calculatePolygonAreaFromGeometry(f.getGeometry());
+                    setAreaParcela(area);
+            
+                    if (typeof onSelectFeature === 'function') {
+                        onSelectFeature(f, p);
+                    }
                 } catch (err) {
-                    console.error('Error leyendo feature seleccionada:', err)
+                    console.error('Error leyendo feature seleccionada:', err);
                 }
             }
         }

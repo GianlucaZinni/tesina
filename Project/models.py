@@ -1,4 +1,4 @@
-# Project/models.py
+# ~/Project/models.py
 from sqlalchemy import (
     Column,
     String,
@@ -25,17 +25,14 @@ def user_loader(user_id):
         return user
     return None
 
-
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     abort(401)
 
-
 class TipoUsuario(db.Model):
-    __tablename__ = "tipo_usuario"
+    __tablename__ = "tipos_usuarios"
     id_tipousuario = Column(Integer, primary_key=True)
     tipousuario = Column(String(50), nullable=False)
-
 
 class Usuario(UserMixin, db.Model):
     __tablename__ = "usuarios"
@@ -43,8 +40,10 @@ class Usuario(UserMixin, db.Model):
     username = Column(String(100), nullable=False)
     attribute = Column(Boolean, nullable=False, default=True)
     password = Column(String(100), nullable=False)
-    id_tipousuario = Column(Integer, ForeignKey("tipo_usuario.id_tipousuario"))
+    id_tipousuario = Column(Integer, ForeignKey("tipos_usuarios.id_tipousuario"))
     tipousuario = relationship("TipoUsuario")
+    campos = relationship('Campo', backref='usuario', lazy=True)
+    asignaciones_realizadas = relationship("AsignacionCollar", backref="usuario_asignador", lazy=True) 
 
 class Persona(db.Model):
     __tablename__ = "personas"
@@ -56,13 +55,45 @@ class Persona(db.Model):
     id = Column(Integer, ForeignKey("usuarios.id"))
     usuario = relationship("Usuario")
 
+class Especie(db.Model):
+    __tablename__ = 'especies_animales'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(50), nullable=False, unique=True)
+    tipos = relationship("Tipo", backref="especie", lazy=True)
+    razas = relationship("Raza", backref="especie", lazy=True)
+    estados_reproductivos = relationship("EstadoReproductivo", backref="especie", lazy=True)
+
+    def __repr__(self):
+        return f"<Especie {self.nombre}>"
+
+class Tipo(db.Model):
+    __tablename__ = 'tipos_animales'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(50), nullable=False)
+    especie_id = Column(Integer, ForeignKey("especies_animales.id"), nullable=False)
+    razas = relationship("Raza", backref="tipo", lazy=True)
+
+    __table_args__ = (db.UniqueConstraint('nombre', 'especie_id', name='uix_tipo_nombre_especie'),)
+
+    def __repr__(self):
+        return f"<Tipo {self.nombre} (Especie: {self.especie.nombre})>"
+
+class Raza(db.Model):
+    __tablename__ = 'razas_animales'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(50), nullable=False)
+    especie_id = Column(Integer, ForeignKey("especies_animales.id"), nullable=False)
+    tipo_id = Column(Integer, ForeignKey("tipos_animales.id"), nullable=False)
+    animales = relationship("Animal", backref="raza", lazy=True)
+
+    def __repr__(self):
+        return f"<Raza {self.nombre} (Tipo: {self.tipo.nombre})>"
+
 class Animal(db.Model):
     __tablename__ = 'animales'
     id = Column(Integer, primary_key=True)
     nombre = Column(String(50), nullable=False)
     numero_identificacion = Column(String(50), unique=True)
-    raza = Column(String(50))
-    sexo = Column(String(10))
     fecha_nacimiento = Column(Date)
     
     # Zoometría
@@ -74,7 +105,8 @@ class Animal(db.Model):
     longitud_grupa = Column(Float)
 
     # Reproducción
-    estado_reproductivo = Column(String(50))
+    estado_reproductivo_id = Column(Integer, ForeignKey("estado_reproductivo_animales.id"))
+    estado_reproductivo = relationship("EstadoReproductivo", backref="animales", lazy=True)
     numero_partos = Column(Integer)
     intervalo_partos = Column(Integer)
     fertilidad = Column(Float)
@@ -82,76 +114,79 @@ class Animal(db.Model):
     
     # Relaciones
     parcela_id = Column(Integer, ForeignKey("parcelas.id"))
-    caracteristicas_id = Column(Integer, ForeignKey('caracteristicas.id'))
-    caracteristicas = relationship('Caracteristicas', backref='animal', uselist=False)
+    parcela = relationship("Parcela", backref="animales", lazy=True)
+    raza_id = Column(Integer, ForeignKey("razas_animales.id"))
+    sexo_id = Column(Integer, ForeignKey("sexos_animales.id"))
+    sexo = relationship("Sexo", backref="animales", lazy=True)
+    asignaciones_collar = relationship("AsignacionCollar", backref="animal", lazy=True, cascade="all, delete-orphan") 
 
-class Caracteristicas(db.Model):
-    __tablename__ = 'caracteristicas'
+class Sexo(db.Model):
+    __tablename__ = 'sexos_animales'
     id = Column(Integer, primary_key=True)
+    nombre = Column(String(50), nullable=False)
+    estados_reproductivos = relationship("EstadoReproductivo", backref="sexo", lazy=True)
 
-    # Índices morfométricos
-    indice_corporal = Column(Float)
-    indice_toracico = Column(Float)
-    indice_cefalico = Column(Float)
+    def __repr__(self):
+        return f"<Sexo {self.nombre}>"
 
-    # Morfología regional y fanerópticos
-    perfil = Column(String(50))
-    cabeza = Column(String(50))
-    cuello = Column(String(50))
-    grupa = Column(String(50))
-    orejas = Column(String(50))
-    ubre = Column(String(50))
-    testiculos = Column(String(50))
-    pelaje = Column(String(50))
-    cuernos = Column(Boolean)
-    pezuñas = Column(String(50))
-    mucosas = Column(String(50))
+class EstadoReproductivo(db.Model):
+    __tablename__ = 'estado_reproductivo_animales'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(50), nullable=False)
+    sexo_id = Column(Integer, ForeignKey("sexos_animales.id"), nullable=False)
+    especie_id = Column(Integer, ForeignKey("especies_animales.id"), nullable=False)
 
-    # Funcionalidad
-    bcs = Column(Integer)
-    locomocion = Column(String(50))
-    comportamiento = Column(String(50))
+    def __repr__(self):
+        return f"<EstadoReproductivo {self.nombre}>"
 
+class EstadoCollar(db.Model): 
+    __tablename__ = 'estado_collar_animales'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(50), nullable=False) 
+    collares = relationship("Collar", backref="estado_collar", lazy=True)
+
+    def __repr__(self):
+        return f"<EstadoCollar {self.nombre}>"
 
 class Collar(db.Model):
     __tablename__ = 'collares'
     id = Column(Integer, primary_key=True)
     codigo = Column(String(50), unique=True, nullable=False)
-    fecha_asignacion = Column(Date)
     bateria = Column(Float)
-    estado = Column(String(20))
     ultima_actividad = Column(DateTime)
+    estado_collar_id = Column(Integer, ForeignKey("estado_collar_animales.id"), nullable=False)
     
-    animal_id = Column(Integer, ForeignKey("animales.id"))
-
+    asignaciones = relationship("AsignacionCollar", backref="collar", lazy=True, cascade="all, delete-orphan")
 
 class AsignacionCollar(db.Model):
+    __tablename__ = 'asignaciones_collar'
     id = Column(Integer, primary_key=True)
-    collar_id = Column(Integer, ForeignKey('collares.id'))
-    animal_id = Column(Integer, ForeignKey('animales.id'))
-    fecha_inicio = Column(DateTime, nullable=False)
-    fecha_fin = Column(DateTime)
-
-    motivo_cambio = Column(String(100))
+    collar_id = Column(Integer, ForeignKey('collares.id'), nullable=False)
+    animal_id = Column(Integer, ForeignKey('animales.id'), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    fecha_inicio = Column(DateTime, nullable=False, default=datetime.now)
+    fecha_fin = Column(DateTime)
+    motivo_cambio = Column(String(100))
 
+    __table_args__ = (
+        db.UniqueConstraint('collar_id', 'fecha_fin', name='uq_collar_activo'),
+    )
 
 class NodoAutorizado(db.Model):
     __tablename__ = 'nodos_autorizados'
     id = Column(Integer, primary_key=True)
     collar_id = Column(Integer, ForeignKey('collares.id'), unique=True, nullable=False)
 
-    client_id = Column(String(100), unique=True, nullable=False)  # identificador del nodo MQTT
-    certificado_cn = Column(String(100), nullable=True)           # extraído del TLS mutual auth
+    client_id = Column(String(100), unique=True, nullable=False)
+    certificado_cn = Column(String(100), nullable=True)
     esta_autorizado = Column(Boolean, default=False)
-    fecha_autorizacion = Column(DateTime, default=datetime.utcnow)
+    fecha_autorizacion = Column(DateTime, default=datetime.now)
 
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"))  # quién lo autorizó
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     observaciones = Column(Text)
     
-    collar = relationship("Collar", backref="nodo_autorizado")
+    collar = relationship("Collar", backref="nodo_autorizado", uselist=False)
     usuario = relationship("Usuario")
-
 
 class Ubicacion(db.Model):
     __tablename__ = 'ubicaciones'
@@ -166,8 +201,6 @@ class Ubicacion(db.Model):
     lon = Column(Float)
 
     collar_id = Column(Integer, ForeignKey('collares.id'), nullable=False)
-    collar = relationship("Collar", backref="ubicaciones")
-
 
 class UbicacionActual(db.Model):
     __tablename__ = 'ubicacion_actual'
@@ -176,7 +209,8 @@ class UbicacionActual(db.Model):
     timestamp = Column(DateTime)
     lat = Column(Float)
     lon = Column(Float)
-
+    
+    animal = relationship("Animal", backref="ubicacion_actual", uselist=False)
 
 class Temperatura(db.Model):
     __tablename__ = 'temperaturas'
@@ -186,7 +220,7 @@ class Temperatura(db.Model):
     ambiente = Column(Float)
 
     collar_id = Column(Integer, ForeignKey('collares.id'))
-
+    collar = relationship("Collar", backref="temperaturas")
 
 class Acelerometro(db.Model):
     __tablename__ = 'aceleraciones'
@@ -197,7 +231,7 @@ class Acelerometro(db.Model):
     z = Column(Float)
 
     collar_id = Column(Integer, ForeignKey('collares.id'))
-
+    collar = relationship("Collar", backref="aceleraciones")
 
 class Parcela(db.Model):
     __tablename__ = 'parcelas'
@@ -207,8 +241,10 @@ class Parcela(db.Model):
     perimetro_geojson = Column(Text)
     area = Column(Float)
     campo_id = Column(Integer, ForeignKey("campos.id"), nullable=False)
-    animales = relationship('Animal', backref='parcela', lazy=True)
+    campo = relationship("Campo", backref="parcelas", lazy=True)
 
+    def __repr__(self):
+        return f"<Parcela {self.nombre} (Campo: {self.campo.nombre})>"
 
 class Campo(db.Model):
     __tablename__ = 'campos'
@@ -219,91 +255,65 @@ class Campo(db.Model):
     lon = Column(Float)
     is_preferred = Column(Boolean, default=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    parcelas = relationship('Parcela', backref='campo', lazy=True)
+
+# class EventoSanitario(db.Model):
+#     id = Column(Integer, primary_key=True)
+#     animal_id = Column(Integer, ForeignKey('animales.id'))
+#     fecha = Column(DateTime, nullable=False)
+#     tipo = Column(String(50))  # vacuna, tratamiento, enfermedad
+#     subtipo = Column(String(100))  # clostridiosis, mastitis, ivermectina...
+#     descripcion = Column(Text)
+
+#     via_administracion = Column(String(50))  # oral, subcutánea, etc.
+#     dosis = Column(Float)
+#     unidad_dosis = Column(String(10))  # ml, mg, etc.
+
+#     fecha_proxima_dosis = Column(Date)
+#     resultado = Column(String(100))  # mejorado, pendiente, muerto
+#     responsable = Column(String(100))
+#     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
 
 
-class EventoSanitario(db.Model):
-    id = Column(Integer, primary_key=True)
-    animal_id = Column(Integer, ForeignKey('animales.id'))
-    fecha = Column(DateTime, nullable=False)
-    tipo = Column(String(50))  # vacuna, tratamiento, enfermedad
-    subtipo = Column(String(100))  # clostridiosis, mastitis, ivermectina...
-    descripcion = Column(Text)
-
-    via_administracion = Column(String(50))  # oral, subcutánea, etc.
-    dosis = Column(Float)
-    unidad_dosis = Column(String(10))  # ml, mg, etc.
-
-    fecha_proxima_dosis = Column(Date)
-    resultado = Column(String(100))  # mejorado, pendiente, muerto
-    responsable = Column(String(100))
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
-
-
-
-class ResumenAnimalDiario(db.Model):
-    id = Column(Integer, primary_key=True)
-    animal_id = Column(Integer, ForeignKey('animales.id'))
-    fecha = Column(Date, index=True)
+# class ResumenAnimalDiario(db.Model):
+#     id = Column(Integer, primary_key=True)
+#     animal_id = Column(Integer, ForeignKey('animales.id'))
+#     fecha = Column(Date, index=True)
     
-    temp_promedio = Column(Float)
-    temp_max = Column(Float)
-    temp_min = Column(Float)
+#     temp_promedio = Column(Float)
+#     temp_max = Column(Float)
+#     temp_min = Column(Float)
 
-    tiempo_activo = Column(Float)  # en minutos
-    tiempo_inactivo = Column(Float)
-    tiempo_rumiando = Column(Float)
-    tiempo_dormido = Column(Float)
+#     tiempo_activo = Column(Float)  # en minutos
+#     tiempo_inactivo = Column(Float)
+#     tiempo_rumiando = Column(Float)
+#     tiempo_dormido = Column(Float)
 
-    distancia_recorrida = Column(Float)
+#     distancia_recorrida = Column(Float)
 
-    eventos_criticos = Column(Integer)
-    alertas_generadas = Column(Integer)
+#     eventos_criticos = Column(Integer)
+#     alertas_generadas = Column(Integer)
 
-    lat_promedio = Column(Float)
-    lon_promedio = Column(Float)
-    parcela_id = Column(Integer, ForeignKey('parcelas.id'))
+#     lat_promedio = Column(Float)
+#     lon_promedio = Column(Float)
+#     parcela_id = Column(Integer, ForeignKey('parcelas.id'))
 
-    humedad_ambiente = Column(Float)
-    temp_ambiente = Column(Float)
-
-
-class Alarma(db.Model):
-    id = Column(Integer, primary_key=True)
-    animal_id = Column(Integer, ForeignKey('animales.id'))
-    fecha = Column(DateTime, index=True)
-    tipo = Column(String(50))  # "temperatura alta", "inactividad", etc.
-    severidad = Column(String(20))  # crítica, media, leve
-    valor_detectado = Column(Float)
-    umbral = Column(Float)
-
-    observacion = Column(Text)
-    confirmada = Column(Boolean, default=False)
-    fecha_confirmacion = Column(DateTime)
-    usuario_confirmo_id = Column(Integer, ForeignKey('usuarios.id'))
+#     humedad_ambiente = Column(Float)
+#     temp_ambiente = Column(Float)
 
 
-class PreferenciaMapa(db.Model):
-    __tablename__ = "preferencias_mapa"
-    id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), unique=True)
+# class Alarma(db.Model):
+#     id = Column(Integer, primary_key=True)
+#     animal_id = Column(Integer, ForeignKey('animales.id'))
+#     fecha = Column(DateTime, index=True)
+#     tipo = Column(String(50))  # "temperatura alta", "inactividad", etc.
+#     severidad = Column(String(20))  # crítica, media, leve
+#     valor_detectado = Column(Float)
+#     umbral = Column(Float)
 
-    lat_inicial = Column(Float, default=-38.4161)  # Argentina
-    lon_inicial = Column(Float, default=-63.6167)
-    zoom = Column(Integer, default=12)
-    tipo_capa = Column(String(50), default="satellite")  # o "osm", etc.
-
-    capa_parcelas = Column(Boolean, default=True)
-    capa_animales = Column(Boolean, default=True)
-
-    # opcional: límites del mapa
-    bound_lat_min = Column(Float)
-    bound_lat_max = Column(Float)
-    bound_lon_min = Column(Float)
-    bound_lon_max = Column(Float)
-
-    usuario = relationship("Usuario", backref="preferencias_mapa")
-
+#     observacion = Column(Text)
+#     confirmada = Column(Boolean, default=False)
+#     fecha_confirmacion = Column(DateTime)
+#     usuario_confirmo_id = Column(Integer, ForeignKey('usuarios.id'))
 
 # # # Futuro
 

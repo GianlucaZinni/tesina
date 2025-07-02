@@ -1,4 +1,4 @@
-// hooks/polygonTools/draw.js
+// ~/Project/frontend/src/hooks/polygonTools/draw.js
 import { useEffect, useRef, useState } from 'react'
 import { Feature } from 'ol'
 import { Polygon, Point, LineString } from 'ol/geom'
@@ -274,7 +274,6 @@ export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
         }
     
         document.body.classList.remove('draw-mode')
-        setMode('draw-finished')
         setTooltipText('')
         drawingPoints.current = []
         vertexFeatures.current = []

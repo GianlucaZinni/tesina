@@ -1,4 +1,4 @@
-// utils/mapIcon.js
+// ~/Project/frontend/src/utils/mapIcon.js
 import { Feature } from 'ol'
 import Point from 'ol/geom/Point'
 import Style from 'ol/style/Style'
@@ -26,7 +26,8 @@ export function createMapMarker(coord3857) {
     })
 
     const layer = new VectorLayer({
-        source: source
+        source: source,
+        zIndex: 1000
     })
 
     return { feature: marker, layer }

@@ -1,4 +1,4 @@
-// context/AuthContext.jsx
+// ~/Project/frontend/src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { login as loginService, logout as logoutService, getSession } from '../api/services/authService';
 

@@ -7,9 +7,13 @@ html,
 body,
 #root {
   height: 100%;
-  margin: 0;
   padding: 0;
   background-color: white; /* Fondo blanco para evitar fondo negro */
+  touch-action: manipulation;
+}
+
+:root {
+  --footer-height: 80px; /* ajustá según el alto real de tu footer */
 }
 
 :root {
@@ -188,4 +192,13 @@ body.draw-mode {
   z-index: 0 !important;
   pointer-events: auto !important;
   touch-action: auto !important;
+}
+
+.ol-tooltip {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.ol-tooltip.fade-in {
+  opacity: 1 !important;
 }

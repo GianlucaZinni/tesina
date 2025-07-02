@@ -1,4 +1,4 @@
-# /Project/backend/src/Routes/home/routes.py
+# ~/Project/backend/src/Routes/home/routes.py
 from flask import Blueprint, render_template, current_app, redirect
 from Project.access import admin_required
 import json

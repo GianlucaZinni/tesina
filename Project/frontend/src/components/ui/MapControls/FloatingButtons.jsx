@@ -1,4 +1,4 @@
-// components/FloatingButtons.jsx
+// ~/Project/frontend/src/components/ui/MapControls/FloatingButtons.jsx
 import { CircleX, X, Save } from 'lucide-react';
 
 
@@ -12,7 +12,7 @@ export default function FloatingButtons({
     showCancel = true,
     showSave = true
 }) {
-    if (mode !== 'edit') return null
+    if (!['edit', 'draw-edit'].includes(mode)) return null;
 
     return (
         <>

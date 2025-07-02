@@ -1,4 +1,4 @@
-// utils/geometry.js
+// ~/Project/frontend/src/utils/geometry.js
 import { getArea as getGeodesicArea } from 'ol/sphere'
 
 export function calculatePolygonAreaFromGeometry(geometry) {

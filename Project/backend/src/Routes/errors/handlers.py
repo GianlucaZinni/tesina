@@ -1,4 +1,4 @@
-# /Project/backend/Routes/errores/handlers.py
+# ~/Project/backend/src/Routes/errores/handlers.py
 from flask import Blueprint, render_template
 
 errors = Blueprint('errors', __name__)

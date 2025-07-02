@@ -1,4 +1,4 @@
-// components/Forms.jsx
+// ~/Project/frontend/src/components/ui/Forms/Forms.jsx
 export function FormularioParcela({ campos = {}, formData = {}, onChange = () => { } }) {
     return (
         <>
@@ -7,7 +7,10 @@ export function FormularioParcela({ campos = {}, formData = {}, onChange = () =>
                 <select
                     name="campo_id"
                     value={formData.campo_id}
-                    onChange={onChange}
+                    onChange={(e) => {
+                        onChange(e);
+                        window.dispatchEvent(new Event('cerrarPopupResumen'));
+                    }}
                     className="form-select w-full border p-1 rounded-full text-xs bg-white/70"
                 >
                     {Object.entries(campos).map(([id, campo]) => (
@@ -29,6 +32,7 @@ export function FormularioParcela({ campos = {}, formData = {}, onChange = () =>
                     name="nombre"
                     value={formData.nombre}
                     onChange={onChange}
+                    maxLength={14}
                     className="w-full border p-1 rounded-full text-xs bg-white/70"
                 />
             </div>
@@ -78,6 +82,7 @@ export function FormularioCampo({ campos = {}, formData = {}, onChange = () => {
                     name="nombre"
                     value={formData.nombre}
                     onChange={onChange}
+                    maxLength={16}
                     className="w-full border p-1 rounded-full text-xs bg-white/70"
                 />
             </div>
@@ -97,3 +102,5 @@ export function FormularioCampo({ campos = {}, formData = {}, onChange = () => {
         </>
     )
 }
+
+

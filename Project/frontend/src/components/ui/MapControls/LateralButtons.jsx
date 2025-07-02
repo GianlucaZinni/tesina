@@ -1,4 +1,4 @@
-// components/LateralButtons.jsx
+// ~/Project/frontend/src/components/ui/MapControls/LateralButtons.jsx
 import { Layers, LocateFixed, MapPinned } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import CompassButton from './CompassButton'
@@ -25,7 +25,7 @@ export default function LateralButtons({
     }, [mapRef])
 
     return (
-        <div style={{ top: "4.5rem" }} className="absolute right-4 z-40 flex flex-col gap-2">
+        <div className="absolute top-4 left-4 z-40 flex flex-col gap-2">
             <button onClick={onToggleLayer} title="Cambiar capa" className="bg-white rounded-full p-3 shadow-md">
                 <Layers className="w-6 h-6 text-gray-800" />
             </button>

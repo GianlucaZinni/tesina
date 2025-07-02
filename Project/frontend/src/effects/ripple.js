@@ -1,4 +1,4 @@
-// effects/ripple.js
+// ~/Project/frontend/src/effects/ripple.js
 export function crearRipple(event) {
     const ripple = document.createElement('div')
     ripple.className = 'ripple-effect'

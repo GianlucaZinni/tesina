@@ -1,4 +1,4 @@
-// src/api/services/authService.js
+// ~/Project/frontend/src/api/services/authService.js
 import apiClient from '../apiClient';
 
 /**

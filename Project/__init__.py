@@ -1,4 +1,4 @@
-# Project/__init__.py
+# ~/Project/__init__.py
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -27,27 +27,31 @@ def create_app(config_class=Config):
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    app.config["SESSION_COOKIE_DOMAIN"] = "127.0.0.1"  # 👈 ESTO
+    app.config["SESSION_COOKIE_DOMAIN"] = "127.0.0.1"
 
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 
     CORS(app,
-        origins=["http://127.0.0.1:5000"],  # 👈 igual al dominio real
+        origins=["http://127.0.0.1:5000"],
         supports_credentials=True)
 
     from Project.backend.src.Routes.home.routes import home
     from Project.backend.src.Routes.users.routes import users_api
-    from Project.backend.src.Routes.config.routes import config
+    from Project.backend.src.Routes.map.routes import map
+    from Project.backend.src.Routes.parcelas.endpoints import parcelas
+    from Project.backend.src.Routes.animals.routes import animals
+    from Project.backend.src.Routes.collares.routes import collares
     from Project.backend.src.Routes.api_gateway.routes import api_gateway
-    from Project.backend.src.Routes.data.routes import dashboard
     from Project.backend.src.Routes.errors.handlers import errors
     from Project.backend.src.Routes.static_files.routes import static_files
 
 
     app.register_blueprint(home)
     app.register_blueprint(users_api)
-    app.register_blueprint(config)
-    app.register_blueprint(dashboard)
+    app.register_blueprint(map)
+    app.register_blueprint(parcelas)
+    app.register_blueprint(animals)
+    app.register_blueprint(collares)
     app.register_blueprint(errors)
     app.register_blueprint(api_gateway)
     app.register_blueprint(static_files)

@@ -1,14 +1,14 @@
-// App.jsx
+// ~/Project/frontend/src/App.jsx
 import AppRoutes from './AppRoutes.jsx';
 import { useAuth } from './context/AuthContext';
 import { CampoProvider } from './context/CampoContext';
-import { MapProvider } from './context/MapContext';
+import { Toaster } from 'sonner';
 
 export default function App() {
   const { isAuthenticated, loading } = useAuth();
 
   // Mientras carga la sesión, no renderizamos nada
-  if (loading) return <div className="p-4">Verificando sesión...</div>;
+  if (loading) return <div className="p-4 text-green-950">Verificando sesión...</div>;
 
   // Si no está autenticado, renderizamos solo las rutas (LoginView)
   if (!isAuthenticated) {
@@ -17,10 +17,9 @@ export default function App() {
 
   // Si está autenticado, renderizamos el mapa + rutas
   return (
-    <MapProvider>
-      <CampoProvider>
-        <AppRoutes />
-      </CampoProvider>
-    </MapProvider>
+    <CampoProvider>
+      <Toaster richColors position="top-right" />
+      <AppRoutes />
+    </CampoProvider>
   );
 }

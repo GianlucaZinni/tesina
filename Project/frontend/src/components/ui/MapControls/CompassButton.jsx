@@ -1,3 +1,4 @@
+// ~/Project/frontend/src/components/ui/MapControls/CompassButton.jsx
 import { useEffect, useRef } from 'react'
 
 export default function CompassButton({ mapRef }) {

@@ -1,4 +1,4 @@
-// hooks/polygonTools/change.js
+// ~/Project/frontend/src/hooks/polygonTools/change.js
 import { useRef } from 'react'
 import { Feature } from 'ol'
 import { Point, Polygon } from 'ol/geom'
@@ -9,10 +9,9 @@ import { click } from 'ol/events/condition'
 import { toLonLat } from 'ol/proj'
 import Overlay from 'ol/Overlay'
 import { getArea as getGeodesicArea } from 'ol/sphere'
-
 import { PARCELA_STYLES } from '../../constants/styles'
 
-export function useChangeTool(mapRef, { setMode }, onUpdate = () => {}) {
+export function useChangeTool(mapRef, { setMode }, onUpdate = () => { }) {
     const editableLayer = useRef(null)
     const vertexLayer = useRef(null)
     const vertexFeatures = useRef([])
@@ -23,127 +22,127 @@ export function useChangeTool(mapRef, { setMode }, onUpdate = () => {}) {
     const editableFeatureRef = useRef(null)
     const areaLabelOverlay = useRef(null)
 
-    const activateEditMode = (polygonFeature) => {
-        const map = mapRef.current
-        if (!map || !polygonFeature) return
-
-        clearEdit()
-
-        const geometry = polygonFeature.getGeometry()
-        if (!geometry) return
-
-        setMode('edit')
-
-        let coords
+    const activateEditMode = (polygonFeature, mode = 'edit') => {
+        const map = mapRef.current;
+        if (!map || !polygonFeature) return;
+    
+        clearEdit();
+    
+        const geometry = polygonFeature.getGeometry();
+        if (!geometry) return;
+    
+        setMode(mode);
+    
+        let coords;
         if (geometry.getType() === 'Polygon') {
-            const rings = geometry.getCoordinates()
-            coords = Array.isArray(rings[0]) ? rings[0] : []
+            const rings = geometry.getCoordinates();
+            coords = Array.isArray(rings[0]) ? rings[0] : [];
         } else if (geometry.getType() === 'MultiPolygon') {
-            const multi = geometry.getCoordinates()
-            coords = Array.isArray(multi[0][0]) ? multi[0][0] : []
+            const multi = geometry.getCoordinates();
+            coords = Array.isArray(multi[0][0]) ? multi[0][0] : [];
         } else {
-            console.error('Tipo no soportado:', geometry.getType())
-            return
+            console.error('Tipo no soportado:', geometry.getType());
+            return;
         }
-        if (coords.length < 3) return
-
-        const source = new VectorSource()
-        const layer = new VectorLayer({ source, style: PARCELA_STYLES.edit })
-        editableLayer.current = layer
-        map.addLayer(layer)
-
-        const clone = polygonFeature.clone()
-        clone.setStyle(PARCELA_STYLES.edit)
-        source.addFeature(clone)
-        editableFeatureRef.current = clone
-
+        if (coords.length < 3) return;
+    
+        const source = new VectorSource();
+        const layer = new VectorLayer({ source, style: PARCELA_STYLES.edit });
+        editableLayer.current = layer;
+        map.addLayer(layer);
+    
+        const clone = polygonFeature.clone();
+        clone.setStyle(PARCELA_STYLES.edit);
+        source.addFeature(clone);
+        editableFeatureRef.current = clone;
+    
         map.getLayers().forEach((l) => {
-            const src = l.getSource?.()
+            const src = l.getSource?.();
             if (src && src.hasFeature?.(polygonFeature)) {
-                src.removeFeature(polygonFeature)
+                src.removeFeature(polygonFeature);
             }
-        })
-
+        });
+    
         vertexLayer.current = new VectorLayer({
             source: new VectorSource(),
             style: null
-        })
-        map.addLayer(vertexLayer.current)
-
-        const modify = new Modify({ source })
-        modifyInteraction.current = modify
-
+        });
+        map.addLayer(vertexLayer.current);
+    
+        const modify = new Modify({ source });
+        modifyInteraction.current = modify;
+    
         const handlePointerDown = (evt) => {
             map.forEachFeatureAtPixel(evt.pixel, (feat) => {
                 if (feat.get('insertAfter') !== undefined) {
-                    vertexLayer.current.getSource().removeFeature(feat)
-                    intermediateFeatures.current = intermediateFeatures.current.filter(f => f !== feat)
+                    vertexLayer.current.getSource().removeFeature(feat);
+                    intermediateFeatures.current = intermediateFeatures.current.filter(f => f !== feat);
                 }
-            })
-        }
-        map.on('pointerdown', handlePointerDown)
-        modifyInteraction.current._pointerDownHandler = handlePointerDown
-
+            });
+        };
+        map.on('pointerdown', handlePointerDown);
+        modifyInteraction.current._pointerDownHandler = handlePointerDown;
+    
         map.getOverlays().getArray().forEach((overlay) => {
-            const el = overlay.getElement()
+            const el = overlay.getElement();
             if (el && el.className.includes('area-label')) {
-                map.removeOverlay(overlay)
+                map.removeOverlay(overlay);
             }
-        })
-
+        });
+    
         const updateAreaOverlay = () => {
-            const geom = clone.getGeometry()
-            if (!geom || geom.getType() !== 'Polygon') return
-
-            const coords = geom.getCoordinates()?.[0]
-            if (!coords || coords.length < 3) return
-
-            const polygon = new Polygon([coords])
-            const area = getGeodesicArea(polygon, { projection: 'EPSG:3857' })
-
-            const text = `${(area / 10000).toFixed(2)} ha`
-            const centroid = polygon.getInteriorPoint().getCoordinates()
-
+            const geom = clone.getGeometry();
+            if (!geom || geom.getType() !== 'Polygon') return;
+    
+            const coords = geom.getCoordinates()?.[0];
+            if (!coords || coords.length < 3) return;
+    
+            const polygon = new Polygon([coords]);
+            const area = getGeodesicArea(polygon, { projection: 'EPSG:3857' });
+    
+            const text = `${(area / 10000).toFixed(2)} ha`;
+            const centroid = polygon.getInteriorPoint().getCoordinates();
+    
             if (!areaLabelOverlay.current) {
-                const div = document.createElement('div')
-                div.className = 'area-label'
-                div.textContent = text
-
+                const div = document.createElement('div');
+                div.className = 'area-label';
+                div.textContent = text;
+    
                 areaLabelOverlay.current = new Overlay({
                     element: div,
                     positioning: 'center-center',
                     stopEvent: false
-                })
-                map.addOverlay(areaLabelOverlay.current)
+                });
+                map.addOverlay(areaLabelOverlay.current);
             }
-
-            areaLabelOverlay.current.getElement().textContent = text
-            areaLabelOverlay.current.setPosition(centroid)
-        }
-
+    
+            areaLabelOverlay.current.getElement().textContent = text;
+            areaLabelOverlay.current.setPosition(centroid);
+        };
+    
         modify.on('modifyend', (e) => {
-            const updated = e.features.item(0)
-            if (!updated) return
-            const geom = updated.getGeometry()
-            const newCoords = extractPolygonCoordinates(geom)
-            drawVertices(newCoords)
-            onUpdate(formatCoords(newCoords))
-            updateAreaOverlay()
-        })
-
+            const updated = e.features.item(0);
+            if (!updated) return;
+            const geom = updated.getGeometry();
+            const newCoords = extractPolygonCoordinates(geom);
+            drawVertices(newCoords);
+            onUpdate(formatCoords(newCoords));
+            updateAreaOverlay();
+        });
+    
         clone.getGeometry().on('change', () => {
-            const geom = clone.getGeometry()
-            const newCoords = extractPolygonCoordinates(geom)
-            drawVertices(newCoords)
-            onUpdate(formatCoords(newCoords))
-            updateAreaOverlay()
-        })
-
-        map.addInteraction(modify)
-        drawVertices(coords)
-        onUpdate(formatCoords(coords))
-        updateAreaOverlay()
-    }
+            const geom = clone.getGeometry();
+            const newCoords = extractPolygonCoordinates(geom);
+            drawVertices(newCoords);
+            onUpdate(formatCoords(newCoords));
+            updateAreaOverlay();
+        });
+    
+        map.addInteraction(modify);
+        drawVertices(coords);
+        onUpdate(formatCoords(coords));
+        updateAreaOverlay();
+    };    
 
     const drawVertices = (coords) => {
         const map = mapRef.current

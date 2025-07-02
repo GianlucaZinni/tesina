@@ -1,6 +1,5 @@
-// services/mapService.js
+// ~/Project/frontend/src/api/services/mapService.js
 import 'ol/ol.css';
-
 import { Feature } from 'ol';
 import { mouseOnly } from 'ol/events/condition';
 import { Polygon } from 'ol/geom';
@@ -9,12 +8,13 @@ import DragRotate from 'ol/interaction/DragRotate';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import Map from 'ol/Map';
-import { fromLonLat as olFromLonLat, toLonLat as olToLonLat } from 'ol/proj';
+import { fromLonLat as olFromLonLat, toLonLat as olToLonLat,  get as getProjection } from 'ol/proj';
 import OSM from 'ol/source/OSM';
 import VectorSource from 'ol/source/Vector';
 import XYZ from 'ol/source/XYZ';
 import { Fill, Stroke, Style } from 'ol/style';
 import View from 'ol/View';
+import { createXYZ } from 'ol/tilegrid';
 
 
 // VectorLayers dinámicos usados para limpiar el mapa
@@ -47,25 +47,29 @@ export function createBaseMap(containerId, [lat, lon]) {
         title: 'OSM Base',
         preload: Infinity
     })
-    
+
     esriSatLayer = new TileLayer({
         source: new XYZ({
-            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            attributions: 'UB © Satélite'
+            url: 'http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}',
+            attributions: 'UB © Satélite',
+            tileGrid: createXYZ({
+                extent: getProjection('EPSG:3857').getExtent(),
+                tileSize: 256
+            }),
+            maxZoom: 21
         }),
         visible: true,
-        title: 'ESRI Sat',
+        title: 'MapTiler Satellite',
         preload: Infinity
-    })
-    
+    });
 
     const map = new Map({
         target: containerId,
         layers: [esriSatLayer, osmLayer],
         view: new View({
             center: olFromLonLat([lon, lat]),
-            zoom: 15,
-            maxZoom: 17,
+            zoom: 14,
+            maxZoom: 21,
             minZoom: 4,
             rotation: 0,
             constrainRotation: false,

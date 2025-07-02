@@ -1,4 +1,4 @@
-// components/FooterMenuItem.jsx
+// ~/Project/frontend/src/components/ui/Navigation/FooterMenuItem.jsx
 export default function FooterMenuItem({ label, icon, path, current, navigate, full = false, onClick }) {
     const handleClick = () => {
         navigate(path)

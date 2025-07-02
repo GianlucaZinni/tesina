@@ -1,6 +1,6 @@
-// components/Footer.jsx
+// ~/Project/frontend/src/components/ui/Navigation/Footer.jsx
 import { useLocation, useNavigate } from 'react-router-dom'
-import { MapPin, Bell, Fence, Ruler, PawPrint } from 'lucide-react'
+import { MapPin, Bell, Fence, Map, PawPrint } from 'lucide-react'
 import FooterMenuItem from './FooterMenuItem'
 
 export default function Footer({ setMenuOpen }) {
@@ -17,9 +17,9 @@ export default function Footer({ setMenuOpen }) {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 h-16 z-50 bg-white border-t flex justify-around items-center">
-            <FooterMenuItem label="Campos" icon={<Fence />} path="/campos" current={location.pathname} navigate={handleNavigate} />
-            <FooterMenuItem label="Parcelas" icon={<Ruler />} path="/parcelas" current={location.pathname} navigate={handleNavigate} />
-            <FooterMenuItem label="Mapa" icon={<MapPin />} path="/mapa" current={location.pathname} navigate={handleNavigate} />
+            <FooterMenuItem label="Campos" icon={<MapPin />} path="/campos" current={location.pathname} navigate={handleNavigate} />
+            <FooterMenuItem label="Parcelas" icon={<Fence />} path="/parcelas" current={location.pathname} navigate={handleNavigate} />
+            <FooterMenuItem label="Mapa" icon={<Map />} path="/mapa" current={location.pathname} navigate={handleNavigate} />
             <FooterMenuItem label="Alertas" icon={<Bell />} path="/alertas" current={location.pathname} navigate={handleNavigate} />
             <FooterMenuItem label="Animales" icon={<PawPrint />} path="/animales" current={location.pathname} navigate={handleNavigate} />
         </div>

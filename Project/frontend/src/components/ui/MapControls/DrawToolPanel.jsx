@@ -1,4 +1,4 @@
-// components/DrawToolPanel.jsx
+// ~/Project/frontend/src/components/ui/MapControls/DrawToolPanel.jsx
 import { SplinePointer, Check, Undo, X } from 'lucide-react'
 
 export default function DrawToolPanel({

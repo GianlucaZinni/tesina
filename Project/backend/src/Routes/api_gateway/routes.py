@@ -1,7 +1,10 @@
+# ~/Project/backend/src/Routes/api_gateway/routes.py
 from flask import Blueprint, request, jsonify
 from Project import db
-from Project.models import Ubicacion, Temperatura, Acelerometro, NodoAutorizado
+from Project.models import Ubicacion, Temperatura, Acelerometro, NodoAutorizado, Animal, AsignacionCollar, UbicacionActual
 from datetime import datetime
+from sqlalchemy import desc
+from sqlalchemy.orm import joinedload
 
 api_gateway = Blueprint('api_gateway', __name__, url_prefix="/api")
 
@@ -50,15 +53,31 @@ def recibir_datos():
             )
             db.session.add(ubicacion)
 
-        # Temperatura
-        if temperatura_corp is not None:
-            temperatura = Temperatura(
-                timestamp=timestamp,
-                corporal=temperatura_corp,
-                ambiente=temperatura_amb,
-                collar_id=collar.id
-            )
-            db.session.add(temperatura)
+            asignacion = AsignacionCollar.query.filter_by(collar_id=collar.id, fecha_fin=None).first()
+            if asignacion and asignacion.animal_id:
+                actual = UbicacionActual.query.filter_by(animal_id=asignacion.animal_id).first()
+                if actual:
+                    actual.lat = lat
+                    actual.lon = lon
+                    actual.timestamp = timestamp
+                else:
+                    nueva = UbicacionActual(
+                        animal_id=asignacion.animal_id,
+                        lat=lat,
+                        lon=lon,
+                        timestamp=timestamp
+                    )
+                    db.session.add(nueva)
+
+                # Temperatura
+                if temperatura_corp is not None:
+                    temperatura = Temperatura(
+                        timestamp=timestamp,
+                        corporal=temperatura_corp,
+                        ambiente=temperatura_amb,
+                        collar_id=collar.id
+                    )
+                    db.session.add(temperatura)
 
         # Acelerómetro
         if acelerometro:
@@ -91,3 +110,47 @@ def debug_nodo(client_id):
         "collar_id": nodo.collar_id,
         "collar_codigo": nodo.collar.codigo if nodo.collar else None
     }
+
+@api_gateway.route('/collares/estado', methods=['GET'])
+def collares_estado():
+    # Obtener asignaciones activas con JOIN a Animal y Collar
+    asignaciones = db.session.query(AsignacionCollar).options(
+        joinedload(AsignacionCollar.animal),
+        joinedload(AsignacionCollar.usuario_id),
+        joinedload(AsignacionCollar.collar)
+    ).filter(
+        AsignacionCollar.fecha_fin.is_(None)
+    ).all()
+
+    resultado = []
+
+    for asignacion in asignaciones:
+        animal = asignacion.animal
+        collar = asignacion.collar
+
+        if not animal or not collar:
+            continue
+
+        ubicacion = Ubicacion.query.filter_by(collar_id=collar.id).order_by(desc(Ubicacion.timestamp)).first()
+        temperatura = Temperatura.query.filter_by(collar_id=collar.id).order_by(desc(Temperatura.timestamp)).first()
+        acelerometro = Acelerometro.query.filter_by(collar_id=collar.id).order_by(desc(Acelerometro.timestamp)).first()
+
+        resultado.append({
+            "animal_id": animal.id,
+            "nombre": animal.nombre,
+            "collar_id": collar.id,
+            "collar_codigo": collar.codigo,
+            "temperatura": temperatura.corporal if temperatura else None,
+            "ubicacion": {
+                "lat": ubicacion.lat,
+                "lon": ubicacion.lon
+            } if ubicacion else None,
+            "acelerometro": {
+                "x": acelerometro.x,
+                "y": acelerometro.y,
+                "z": acelerometro.z
+            } if acelerometro else None,
+            "timestamp": ubicacion.timestamp.strftime("%Y-%m-%d %H:%M:%S") if ubicacion else None
+        })
+
+    return jsonify(resultado)

@@ -1,3 +1,4 @@
+// ~/Project/frontend/src/components/ui/Navigation/Header.jsx
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, LogOut } from 'lucide-react';

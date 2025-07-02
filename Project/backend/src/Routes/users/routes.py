@@ -1,4 +1,4 @@
-# /Project/backend/Routes/users/routes.py
+# ~/Project/backend/src/Routes/users/routes.py
 from flask import Blueprint, request, jsonify, session
 from flask_login import login_user, logout_user, current_user, login_required
 from Project.models import Usuario
@@ -16,11 +16,12 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
+    print(data)
+
     if not username or not password:
         return jsonify({"status": "error", "message": "Faltan credenciales."}), 400
 
     user = Usuario.query.filter_by(username=username).first()
-    print(user)
 
     if not user:
         return jsonify({"status": "error", "message": "Usuario no encontrado."}), 401
@@ -30,9 +31,6 @@ def login():
 
     login_user(user, remember=True)  # esto fuerza la cookie a persistir
     session.permanent = True
-    print(f"✅ Usuario autenticado: {user.username}")
-    print(session)
-    print(current_user)
     return jsonify({
         "status": "ok",
         "message": "Inicio de sesión exitoso",
@@ -53,8 +51,6 @@ def logout():
 
 @users_api.route("/session", methods=["GET"])
 def session_status():
-    print("✅ current_user:", current_user)
-    print("✅ authenticated:", current_user.is_authenticated)
     if current_user.is_authenticated:
         return jsonify({
             "authenticated": True,

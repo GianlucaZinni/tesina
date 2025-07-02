@@ -1,4 +1,4 @@
-// constants/styles.js
+// ~/Project/frontend/src/constants/styles.js
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style'
 
 export const PARCELA_STYLES = {

@@ -1,4 +1,4 @@
-// AppRoutes.jsx
+// ~/Project/frontend/src/AppRoutes.jsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/ui/Navigation/Header';
 import Footer from './components/ui/Navigation/Footer';
@@ -6,6 +6,8 @@ import LoginView from './views/users/LoginView';
 import MapView from './views/map/MapView';
 import ParcelaView from './views/map/ParcelaView';
 import CampoView from './views/map/CampoView';
+import AnimalView from './views/animals/AnimalView';
+import { MapProvider } from './context/MapContext';
 
 import { useMenuControl } from './components/ui/Navigation/Header';
 import { useAuth } from './context/AuthContext';
@@ -21,10 +23,13 @@ export default function AppRoutes() {
             {!isLogin && <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />}
             <Routes>
                 <Route path="/login" element={<LoginView />} />
+                <Route path="/animales" element={<ProtectedRoute> <AnimalView /> </ProtectedRoute>} />
                 <Route
                     element={
                         <ProtectedRoute>
-                            <MapLayout />
+                            <MapProvider>
+                                <MapLayout />
+                            </MapProvider>
                         </ProtectedRoute>
                     }
                 >
@@ -32,9 +37,8 @@ export default function AppRoutes() {
                     <Route path="/parcelas" element={<ParcelaView />} />
                     <Route path="/campos" element={<CampoView />} />
                 </Route>
-                <Route path="/collares" element={<ProtectedRoute><Placeholder label="Collares" /></ProtectedRoute>} />
+
                 <Route path="/alertas" element={<ProtectedRoute><Placeholder label="Alertas" /></ProtectedRoute>} />
-                <Route path="/animales" element={<ProtectedRoute><Placeholder label="Animales" /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
             {!isLogin && <Footer setMenuOpen={setMenuOpen} />}
@@ -52,7 +56,7 @@ function Placeholder({ label }) {
 
 function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
-    if (loading) return <div className="text-center mt-10">Verificando sesión...</div>;
+    if (loading) return <div className="text-center text-blue-600 mt-10">Verificando sesión...</div>;
     if (!isAuthenticated) return <Navigate to="/login" replace />;
     return children;
 }

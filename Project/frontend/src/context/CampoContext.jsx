@@ -1,4 +1,4 @@
-// context/CampoContext.jsx
+// ~/Project/frontend/src/context/CampoContext.jsx
 import { createContext, useState } from 'react';
 
 export const CampoContext = createContext();

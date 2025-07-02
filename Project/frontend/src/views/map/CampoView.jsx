@@ -1,4 +1,4 @@
-// src/views/CampoView.jsx
+// ~/Project/frontend/src/views/CampoView.jsx
 
 import { useEffect, useState, useContext } from 'react';
 import { useOutletContext } from 'react-router-dom';
@@ -19,6 +19,7 @@ import { CampoContext } from '../../context/CampoContext';
 
 import { Save, MapPinPlus, MapPinX } from 'lucide-react';
 
+import { easeOut } from 'ol/easing';
 
 export default function CampoView() {
     const [formCampo, setFormCampo] = useState({ campo_id: '', nombre: '', descripcion: '', lat: '', lon: '' });
@@ -27,13 +28,13 @@ export default function CampoView() {
     const [modalInfoOpen, setModalInfoOpen] = useState(false);
     const [modalInfoMessage, setModalInfoMessage] = useState('');
 
-    const { 
-        mapRef, 
-        ready 
+    const {
+        mapRef,
+        ready
     } = useContext(MapContext);
 
-    const { 
-        campoSeleccionado, 
+    const {
+        campoSeleccionado,
         setCampoSeleccionado,
         setLastCampoId,
     } = useContext(CampoContext);
@@ -48,15 +49,15 @@ export default function CampoView() {
         setAreaParcela,
     } = useOutletContext();
 
-    const { 
-        colocarMarcadorGps, 
-        moverMarcadorGps, 
-        limpiarMarcadorGps 
+    const {
+        colocarMarcadorGps,
+        moverMarcadorGps,
+        limpiarMarcadorGps
     } = useMarkerGps(mapRef);
 
-    const { 
-        setFeaturesOnMap, 
-        clearParcelas 
+    const {
+        setFeaturesOnMap,
+        clearParcelas
     } = useMapParcelas({
         mapRef,
         parcelas,
@@ -88,6 +89,7 @@ export default function CampoView() {
             setFormCampo({ campo_id: '', nombre: '', descripcion: '', lat: '', lon: '' });
             return;
         }
+
         if (name === 'campo_id') {
             if (value === '') {
                 limpiarMarcadorGps();
@@ -113,15 +115,19 @@ export default function CampoView() {
                     nombre: '',
                     descripcion: ''
                 }));
-                setShowFormCampo(true)
+                setShowFormCampo(true);
 
                 if (mapRef.current) {
-                    mapRef.current.getView().setCenter(fromLonLat([campo.lon, campo.lat]));
+                    mapRef.current.getView().animate({
+                        center: fromLonLat([campo.lon, campo.lat]),
+                        duration: 800,
+                        easing: easeOut
+                    });
                     moverMarcadorGps(campo.lon, campo.lat);
                 }
             }
             return;
-        }        
+        }
 
         setFormCampo(prev => ({ ...prev, [name]: value }));
     };
@@ -170,7 +176,11 @@ export default function CampoView() {
 
     const centrarCampo = (campo) => {
         if (!mapRef.current) return;
-        mapRef.current.getView().setCenter(fromLonLat([campo.lon, campo.lat]));
+        mapRef.current.getView().animate({
+            center: fromLonLat([campo.lon, campo.lat]),
+            duration: 800,
+            easing: easeOut
+        });
         moverMarcadorGps(campo.lon, campo.lat);
     };
 
@@ -227,28 +237,48 @@ export default function CampoView() {
                 lat: campo.lat,
                 lon: campo.lon
             });
-    
+
             if (ready && mapRef.current) {
                 moverMarcadorGps(campo.lon, campo.lat);
             }
         }
-    }, [campoSeleccionado]);    
+    }, [campoSeleccionado]);
+
+    const handleToggleForm = () => {
+        setShowFormCampo(prev => !prev);
+        if (!showFormCampo) {
+            window.dispatchEvent(new CustomEvent("closeCampoSelector"));
+        }
+    };
+
+    useEffect(() => {
+        const closeForm = () => setShowFormCampo(false);
+        window.addEventListener('closeForm', closeForm);
+        return () => window.removeEventListener('closeForm', closeForm);
+    }, []);
 
     return (
         <>
-            <div className="absolute top-4 left-4 z-40 flex flex-row-reverse items-end gap-2">
+            <div className="absolute bottom-20 left-4 z-40 flex flex-col items-end space-y-2">
                 {formCampo.campo_id && (
                     <button onClick={handleEliminar} title="Eliminar campo" className="bg-white p-3 rounded-full shadow-md">
                         <MapPinX className="w-6 h-6" />
                     </button>
                 )}
-                <button onClick={() => setShowFormCampo(p => !p)} title="Mostrar formulario" className="bg-white p-3 rounded-full shadow-md">
+                <button onClick={handleToggleForm} title="Mostrar formulario" className="bg-white p-3 rounded-full shadow-md">
                     <MapPinPlus className="w-6 h-6" />
                 </button>
             </div>
 
             <div
-                className={`absolute top-20 left-4 right-4 md:left-4 md:right-auto md:w-[350px] bg-white/60 rounded-2xl shadow-lg p-2 z-10 overflow-y-auto max-h-[90%] max-w-[70%] flex flex-col gap-2 transform transition-all duration-500 ${showFormCampo ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}
+                className={`
+                    absolute top-24 left-20 right-20 md:left-20
+                    md:right-20 md:w-[350px] bg-white/60 
+                    rounded-2xl shadow-lg p-2 z-10 overflow-y-auto 
+                    max-h-[90%] max-w-[70%] flex flex-col gap-2 
+                    transform transition-all duration-500 
+                    ${showFormCampo ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`
+                }
             >
                 <FormularioCampo campos={campos} formData={formCampo} onChange={handleChange} />
             </div>
@@ -263,7 +293,7 @@ export default function CampoView() {
 
             <ModalGenerico
                 isOpen={modalEliminarOpen}
-                title="¿Eliminar campo?"
+                title="Eliminar campo"
                 message="Esta acción no se puede deshacer. ¿Deseás continuar?"
                 onCancel={() => setModalEliminarOpen(false)}
                 onConfirm={confirmarEliminacion}
