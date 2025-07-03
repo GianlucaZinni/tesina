@@ -1,0 +1,45 @@
+.
+├── DB_CONFIG.json
+├── LICENSE
+├── README.md
+└── backend
+|   ├── README.md
+|   └── app
+|       └── config
+|       |    ├── params
+|       |    |    ├── dev.json
+|       |    |    ├── prod.json
+|       |    |    └── qa.json
+|       |    └── config.py
+|       └── db
+|       |    └── file + config + more args ?? (db = SQLAlchemy())
+|       └── login_manager
+|       |    └── file + config + more args ?? (login_manager = LoginManager())
+|       └── models
+|       |    ├── __init__.py
+|       |    ├── acelerometro.py
+|       |    ├── animal.py
+|       |    ├── asignacion_collar.py
+|       |    ├── auth.py
+|       |    ├── campo.py
+|       |    ├── collar.py
+|       |    ├── especie.py
+|       |    ├── estado_collar.py
+|       |    ├── estado_reproductivo.py
+|       |    ├── nodo_autorizado.py
+|       |    ├── parcela.py
+|       |    ├── persona.py
+|       |    ├── raza.py
+|       |    ├── sexo.py
+|       |    ├── temperatura.py
+|       |    ├── tipo_usuario.py
+|       |    ├── tipo.py
+|       |    ├── ubicacion_actual.py
+|       |    ├── ubicacion.py
+|       |    └── usuario.py
+|       └── security
+|       |    └── required_access.py (access wraps)
+|       └── __init__.py (create_app)
+...     | 
+...     └── more files 
+more files
