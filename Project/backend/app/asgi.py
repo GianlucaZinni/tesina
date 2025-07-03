@@ -3,6 +3,7 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 
 from backend.app import create_app, db
 from database.scripts.function import load_data
+from backend.app.fastapi_routes import home_router
 
 
 def get_asgi_app(boolean: bool = True) -> FastAPI:
@@ -21,6 +22,7 @@ def get_asgi_app(boolean: bool = True) -> FastAPI:
             )
 
     app = FastAPI()
+    app.include_router(home_router)
     app.mount("/", WSGIMiddleware(flask_app))
     return app
 

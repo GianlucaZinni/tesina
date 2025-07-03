@@ -12,3 +12,6 @@ Flask-WTF
 cryptography
 fastapi
 uvicorn
+requests
+shapely
+httpx<0.28
