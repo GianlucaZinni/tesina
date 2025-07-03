@@ -1,11 +1,19 @@
-// ~/Project/frontend/src/components/ui/Forms/CollarEditForm.jsx
-import { useEffect, useMemo } from 'react';
+// ~/Project/frontend/src/components/ui/Forms/CollarForm.jsx
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { Input } from '@/components/ui/shadcn/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/shadcn/select';
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectItem,
+    SelectScrollUpButton,
+    SelectScrollDownButton,
+} from '@/components/ui/shadcn/select';
 import { Button } from '@/components/ui/shadcn/button';
 import { Badge } from '@/components/ui/shadcn/badge';
 import {
@@ -45,6 +53,7 @@ export default function CollarEditForm({ collar = {}, animals = [], onCancel, on
     });
 
     const { handleSubmit, formState: { errors }, watch, setValue } = form;
+    const [animalSearch, setAnimalSearch] = useState('');
 
     // Si el collar está activo, deshabilitar el selector de estado
     const isEstadoDisabled = watch('estado') === 'activo';
@@ -82,7 +91,7 @@ export default function CollarEditForm({ collar = {}, animals = [], onCancel, on
         }
 
         return (
-            <Badge className={cn('flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium', badgeClass)}>
+            <Badge className={cn('flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium', badgeClass)}>
                 {icon}
                 {text}
             </Badge>
@@ -107,6 +116,32 @@ export default function CollarEditForm({ collar = {}, animals = [], onCancel, on
             if (errors.animal_id) console.error("Error animal_id:", errors.animal_id.message);
         }
     }, [errors, form]);
+
+    const selectedAnimalId = watch('animal_id');
+    const selectedAnimal = animals.find(a => a.animal_id.toString() === selectedAnimalId?.toString());
+    
+    const filteredAnimals = useMemo(() => {
+        const q = animalSearch.trim().toLowerCase();
+        let list = animals;
+    
+        if (q) {
+            list = animals.filter(a => (
+                a.nombre?.toLowerCase().includes(q) ||
+                a.numero_identificacion?.toLowerCase?.().includes(q) ||
+                a.collar_asignado?.codigo?.toLowerCase().includes(q)
+            ));
+        }
+    
+        // Incluir el animal seleccionado si no está en el filtro
+        if (
+            selectedAnimal &&
+            !list.some(a => a.animal_id === selectedAnimal.animal_id)
+        ) {
+            list = [selectedAnimal, ...list];
+        }
+    
+        return list;
+    }, [animals, animalSearch, selectedAnimal]);
 
     const onSubmit = (data) => {
         const payload = {
@@ -221,20 +256,39 @@ export default function CollarEditForm({ collar = {}, animals = [], onCancel, on
                                         <SelectValue placeholder="Seleccionar animal (opcional)" />
                                     </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="UNASSIGNED">
-                                        <div className="flex items-center gap-2 text-muted-foreground italic">
-                                            <Slash className="h-4 w-4" /> Desasignar
-                                        </div>
-                                    </SelectItem>
-                                    {animals.map((animal) => (
-                                        <SelectItem key={animal.animal_id} value={animal.animal_id.toString()}>
-                                            {animal.nombre} ({animal.numero_identificacion})
-                                            {animal.collar_asignado && animal.collar_asignado.id !== collar.collar_id && (
-                                                <span className="italic ml-2"> - Collar asignado ({animal.collar_asignado.codigo})</span>
-                                            )}
+                                <SelectContent withScrollButtons={false} className="bg-white max-h-[350px] overflow-auto">
+                                    <div className="bg-white px-4 pt-4 sticky top-0 z-20">
+                                        <Input
+                                            value={animalSearch}
+                                            onChange={(e) => setAnimalSearch(e.target.value)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            placeholder="Buscar animal o collar"
+                                            className="mb-2 text-sm mt-4 px-4"
+                                        />
+                                        <SelectItem value="UNASSIGNED" className="border-b">
+                                            <div className="flex items-center gap-2 text-muted-foreground italic">
+                                                <Slash className="h-4 w-4" /> Desasignar
+                                            </div>
                                         </SelectItem>
-                                    ))}
+                                        <SelectScrollUpButton className="sticky top-[6rem] z-10 bg-white h-max" />
+                                    </div>
+                                    {filteredAnimals.length === 0 ? (
+                                        <div className="text-sm text-gray-400 text-center py-2">Sin resultados</div>
+                                    ) : (
+                                        filteredAnimals.map((animal) => (
+                                            <SelectItem
+                                                key={animal.animal_id}
+                                                value={animal.animal_id.toString()}
+                                                className="bg-white"
+                                            >
+                                                {animal.nombre} ({animal.numero_identificacion})
+                                                {animal.collar_asignado && animal.collar_asignado.id !== collar.collar_id && (
+                                                    <span className="italic ml-2"> - Collar asignado ({animal.collar_asignado.codigo})</span>
+                                                )}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                    <SelectScrollDownButton className="sticky bottom-0 z-10 bg-white h-max" />
                                 </SelectContent>
                             </Select>
                             <FormDescription>Asigna este collar a un animal específico. Un collar solo puede estar asignado a un animal a la vez. Si el animal ya tiene un collar, este será desasignado automáticamente.</FormDescription>
@@ -244,10 +298,10 @@ export default function CollarEditForm({ collar = {}, animals = [], onCancel, on
                 />
 
                 <div className="flex justify-end gap-4 mt-6 border-t pt-4">
-                    <Button type="button" variant="outline" onClick={onCancel} className="flex items-center gap-2 px-6 py-3 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                    <Button type="button" variant="outline" onClick={onCancel} className="flex items-center gap-2 px-6 py-3 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-200">
                         Cancelar
                     </Button>
-                    <Button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-md bg-black text-white hover:bg-gray-700 transition-colors duration-200 shadow-lg">
+                    <Button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-black text-white hover:bg-gray-700 transition-colors duration-200 shadow-lg">
                         <CircleDashed className="h-5 w-5" />
                         Guardar Collar
                     </Button>

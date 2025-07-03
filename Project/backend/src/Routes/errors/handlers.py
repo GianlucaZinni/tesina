@@ -19,7 +19,7 @@ def error_404(error):
 
 """
 Error 403 - Forbidden 
-significa que se a intentado acceder a una pagina o recurso del cual
+significa que se ha intentado acceder a una pagina o recurso del cual
 el usuario no tiene acceso.
 """
 @errors.app_errorhandler(403)

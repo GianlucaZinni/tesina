@@ -56,7 +56,7 @@ export default function CampoSelector({
                     {parcelaId && campoId ? (
                         <>
                             <div className="flex items-center justify-center gap-1 flex-wrap">
-                                <MapPin size={14} className="text-cyan-400" />
+                                <MapPin size={14} className="text-blue-400" />
                                 <span className="text-sm truncate">{parcelaNombre}</span>
                             </div>
                             <span className="text-xs text-green-400 mt-0.5">
@@ -74,7 +74,7 @@ export default function CampoSelector({
                 <ChevronDown size={16} className="text-white" />
             </button>
             {selectorOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-md shadow-md text-sm overflow-hidden z-20 w-full">
+                <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-md text-sm overflow-hidden z-20 w-full">
                     {Object.entries(campos).map(([id, campo]) => (
                         <button
                             key={id}

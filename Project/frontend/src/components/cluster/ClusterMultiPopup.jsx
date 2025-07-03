@@ -36,25 +36,26 @@ export default function ClusterMultiPopup({
     }, [onClose]);
 
     return (
-        <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-3 w-[280px] max-h-[300px] overflow-auto">
-            <button
-                onClick={onClose}
-                className="absolute top-1 right-1 text-gray-500 hover:text-black"
-                aria-label="Cerrar"
-            >
-                <X size={20} />
-            </button>
-            <div className="flex justify-between items-center mb-2">
-                <h2 className="text-sm font-semibold text-gray-700">Animales en esta zona</h2>
+        <div className="absolute top-0 bg-white rounded-xl shadow-xl border border-gray-200 px-3 w-[280px] max-h-[360px] overflow-auto z-50">
+            <div className="bg-white px-4 pt-4 sticky top-0 z-20">
+                <button
+                    onClick={onClose}
+                    className="absolute z-30 top-2 -right-3 text-gray-500 hover:text-black"
+                    aria-label="Cerrar"
+                >
+                    <X size={18} />
+                </button>
+                <div className="flex justify-center items-center mb-2">
+                    <h2 className="text-sm font-semibold text-gray-700">Animales en esta zona</h2>
+                </div>
+
+                <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Buscar por nombre, ID, especie..."
+                    className="mb-2 text-sm mt-4 px-4"
+                />
             </div>
-
-            <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar por nombre, ID, especie..."
-                className="mb-2 text-sm"
-            />
-
             {animalList.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-2">Sin resultados</p>
             ) : (
@@ -69,7 +70,7 @@ export default function ClusterMultiPopup({
                                     if (selected) onSelectAnimal(selected);
                                 }}
                             >
-                                <PawPrint size={16} className={"text-cyan-600"} /> {a.nombre} ({a.numero_identificacion}) - {a.especie}
+                                <PawPrint size={16} className={"text-blue-800"} /> {a.nombre} ({a.numero_identificacion}) - {a.especie}
                             </Button>
                         </li>
                     ))}

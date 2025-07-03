@@ -74,7 +74,7 @@ export default function GlobalFilterPanel({ table, columnVisibility = {} }) {
                             relevantFilterableColumns.map(column => (
                                 <div
                                     key={column.id}
-                                    className="p-4 rounded-md border border-gray-200 bg-gray-50 shadow-sm w-full"
+                                    className="p-4 rounded-xl border border-gray-200 bg-gray-50 shadow-sm w-full"
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <h4 className="text-sm font-medium text-gray-700 capitalize">
@@ -93,7 +93,7 @@ export default function GlobalFilterPanel({ table, columnVisibility = {} }) {
                                     </div>
                                     <ColumnFilter column={column}/>
                                     {column.getIsFiltered() && (
-                                        <p className="text-xs text-blue-600 mt-1">
+                                        <p className="text-xs text-blue-800 mt-1">
                                             Filtro activo: <code>{String(column.getFilterValue())}</code>
                                         </p>
                                     )}

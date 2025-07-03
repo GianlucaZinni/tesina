@@ -141,7 +141,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                         <Button
                             variant="link"
                             onClick={handleDownloadTemplate}
-                            className="p-0 h-auto text-blue-600 hover:text-blue-800 flex items-center justify-start"
+                            className="p-0 h-auto text-blue-800 hover:text-blue-800 flex items-center justify-start"
                             disabled={isLoading}
                         >
                             <FileText className="h-4 w-4 mr-1" /> Descargar Plantilla
@@ -169,7 +169,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                     )}
 
                     {importResults && (
-                        <div className="mt-4 p-4 border rounded-md bg-gray-50">
+                        <div className="mt-4 p-4 rounded-xl bg-gray-50">
                             <h4 className="font-semibold text-lg mb-2">Resumen de Importación</h4>
                             <p className="text-sm">Total procesados: {importResults.summary.total_processed}</p>
                             <p className="text-sm">Creados: {importResults.summary.created}</p>
@@ -181,7 +181,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                                     <h5 className="font-semibold text-sm text-red-600 mb-2 flex items-center gap-1">
                                         <List className="h-4 w-4" /> Detalles de Errores:
                                     </h5>
-                                    <ScrollArea className="h-40 border rounded-md p-2 bg-white">
+                                    <ScrollArea className="h-40 border rounded-xl p-2 bg-white">
                                         {importResults.errors.map((err, index) => (
                                             <div key={index} className="mb-2 text-xs text-red-700 border-b pb-1 last:border-b-0">
                                                 <p className="font-bold">Fila {err.row}:</p>

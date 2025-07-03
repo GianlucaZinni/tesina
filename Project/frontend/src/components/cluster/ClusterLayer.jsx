@@ -62,7 +62,7 @@ export default function ClusterLayer({
         if (!container) {
             container = document.createElement('div');
             container.id = containerId;
-            container.className = 'absolute z-5';
+            container.className = 'relative z-5';
             document.body.appendChild(container);
         }
 

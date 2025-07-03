@@ -627,12 +627,11 @@ def api_create_animal():
     data = request.get_json()
 
     nombre = data.get("nombre")
-    numero_identificacion = data.get("numero_identificacion")
     sexo_id = data.get("sexo_id")
     raza_id = data.get("raza_id")
     parcela_id = data.get("parcela_id")
 
-    if not all([nombre, numero_identificacion, sexo_id, raza_id, parcela_id]):
+    if not all([nombre, sexo_id, raza_id, parcela_id]):
         return (
             jsonify(
                 {
@@ -654,7 +653,7 @@ def api_create_animal():
 
     nuevo = Animal(
         nombre=nombre,
-        numero_identificacion=numero_identificacion,
+        numero_identificacion=f"ID-x",
         raza_id=raza_id,
         sexo_id=sexo_id,
         fecha_nacimiento=(
@@ -669,9 +668,9 @@ def api_create_animal():
         ancho_grupa=data.get("ancho_grupa"),
         longitud_grupa=data.get("longitud_grupa"),
         estado_reproductivo_id=data.get("estado_reproductivo_id"),
-        numero_partos=data.get("numero_partos"),
-        intervalo_partos=data.get("intervalo_partos"),
-        fertilidad=data.get("fertilidad"),
+        numero_partos=data.get("numero_partos", ""),
+        intervalo_partos=data.get("intervalo_partos", ""),
+        fertilidad=0,
         ubicacion_sensor=data.get("ubicacion_sensor"),
         parcela_id=parcela_id,
     )

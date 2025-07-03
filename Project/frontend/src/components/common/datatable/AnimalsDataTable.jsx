@@ -91,11 +91,17 @@ export default function AnimalsDataTable({
             pagination,
             columnVisibility,
         },
-        onGlobalFilterChange: setGlobalFilter,
+        onGlobalFilterChange: (value) => {
+            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+            setGlobalFilter(value);
+        },
         onRowSelectionChange: setRowSelection,
         onSortingChange: setSorting,
         onPaginationChange: setPagination,
         onColumnVisibilityChange: setColumnVisibility,
+        onColumnFiltersChange: () => {
+            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+        },
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -103,6 +109,7 @@ export default function AnimalsDataTable({
         getExpandedRowModel: getExpandedRowModel(),
         getFacetedRowModel: getFacetedRowModel(),
         enableRowSelection: true,
+        autoResetPageIndex: false,
         meta: {
             showExpandableRows: showExpandableRows,
             columnVisibility: columnVisibility,

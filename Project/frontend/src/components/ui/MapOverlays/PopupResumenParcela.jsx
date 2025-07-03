@@ -19,7 +19,7 @@ export default function PopupResumenParcela({ resumen, visible, onClose }) {
                     <div className="relative bg-white w-full max-w-[400px] max-h-[45vh] overflow-y-auto rounded-2xl shadow-xl p-4 border border-gray-300 dark:bg-zinc-900 dark:text-white">
                         <button
                             onClick={onClose}
-                            className="absolute top-2 right-2 p-1 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                            className="absolute top-2 right-2 p-1 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700"
                             title="Cerrar"
                         >
                             <X className="w-5 h-5" />

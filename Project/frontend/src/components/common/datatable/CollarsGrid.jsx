@@ -100,7 +100,7 @@ const getEstadoBadge = (estado, bateria) => {
     }
 
     return (
-        <Badge className={cn('flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap max-w-[70%] truncate', badgeClass)}>
+        <Badge className={cn('flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium whitespace-nowrap max-w-[70%] truncate', badgeClass)}>
             {icon}
             {text}
         </Badge>
@@ -166,7 +166,10 @@ export default function CollarsGrid({
             pagination,
             columnVisibility,
         },
-        onGlobalFilterChange: setGlobalFilter,
+        onGlobalFilterChange: (value) => {
+            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+            setGlobalFilter(value);
+        },
         onRowSelectionChange: setRowSelection,
         onSortingChange: setSorting,
         onPaginationChange: setPagination,
@@ -176,6 +179,7 @@ export default function CollarsGrid({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         enableRowSelection: true,
+        autoResetPageIndex: false,
         globalFilterFn: (row, columnId, filterValue) => {
             const searchTerm = String(filterValue).toLowerCase();
             const codigo = row.original.codigo?.toLowerCase() || '';
@@ -326,7 +330,7 @@ export default function CollarsGrid({
                     </div>
                 </div>
 
-                <ScrollArea className="max-h-[80vh] w-full overflow-y-auto border rounded-xl p-3 bg-gray-50">
+                <ScrollArea className="max-h-[80vh] w-full overflow-y-auto rounded-xl p-3 bg-gray-50">
                     {displayedCollarRows.length === 0 ? (
                         <div className="text-center text-gray-500 py-12">
                             <Ban className="h-10 w-10 mx-auto mb-3 text-gray-400" />
@@ -346,7 +350,7 @@ export default function CollarsGrid({
                             </p>
                         </div>
                     ) : (
-                        <ul className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        <ul className="grid w-full p-1 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             {displayedCollarRows.map((row) => {
                                 const collar = row.original;
                                 const isSelected = row.getIsSelected();
@@ -354,7 +358,7 @@ export default function CollarsGrid({
                                     <li
                                         key={collar.id}
                                         className={cn(
-                                            "flex flex-col justify-between p-4 rounded-md bg-white border shadow-sm hover:shadow-md transition-shadow duration-150 min-h-[120px] cursor-pointer relative",
+                                            "flex flex-col justify-center p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-150 min-h-[120px] cursor-pointer relative",
                                             isSelected ? "border-blue-500 ring-2 ring-blue-500 bg-blue-50" : "border-gray-200"
                                         )}
                                         onClick={row.getToggleSelectedHandler()}
@@ -374,7 +378,7 @@ export default function CollarsGrid({
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap justify-between items-center gap-2 mt-2">
+                                        <div className="flex flex-wrap justify-center items-center gap-2 mt-2">
                                             {getEstadoBadge(collar.estado, collar.bateria)}
                                             <div className="flex gap-2 flex-shrink-0">
                                                 <Button

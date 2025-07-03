@@ -62,7 +62,7 @@ export default function LoginView() {
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
                             Usuario
                         </label>
-                        <div className="flex items-center border rounded-md shadow-sm px-3 py-2 bg-gray-50 focus-within:ring-2 focus:ring-gray-500">
+                        <div className="flex items-center border rounded-xl shadow-sm px-3 py-2 bg-gray-50 focus-within:ring-2 focus:ring-gray-500">
                             <CircleUserRound className="text-gray-400 mr-2" />
                             <input
                                 id="username"
@@ -81,7 +81,7 @@ export default function LoginView() {
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                             Contraseña
                         </label>
-                        <div className="flex items-center border rounded-md shadow-sm px-3 py-2 bg-gray-50 focus-within:ring-2 focus:ring-gray-500">
+                        <div className="flex items-center border rounded-xl shadow-sm px-3 py-2 bg-gray-50 focus-within:ring-2 focus:ring-gray-500">
                             <LockKeyhole className="text-gray-400 mr-2" />
                             <input
                                 id="password"
@@ -99,7 +99,7 @@ export default function LoginView() {
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-2 px-4 bg-black text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition"
+                        className="w-full py-2 px-4 bg-black text-white font-semibold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition"
                     >
                         {submitting ? 'Ingresando...' : 'Ingresar'}
                     </button>

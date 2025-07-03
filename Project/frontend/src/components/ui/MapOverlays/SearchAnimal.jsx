@@ -49,7 +49,7 @@ export default function SearchAnimal({ inside = [], outside = [], featuresMapRef
 
     return (
         <div className="absolute top-16 mt-2 right-4 z-40 flex items-center gap-2">
-            <button 
+            <button
                 onClick={() => {
                     setIsOpen(!isOpen);
                     if (window.ClusterPopup?.close) {
@@ -62,23 +62,26 @@ export default function SearchAnimal({ inside = [], outside = [], featuresMapRef
             </button>
 
             {isOpen && (
-                <div className="absolute right-16 top-0 bg-white rounded-xl shadow-xl border border-gray-200 p-3 w-[280px] max-h-[360px] overflow-auto z-50">
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="absolute top-2 right-2 text-gray-500 hover:text-black"
-                        aria-label="Cerrar"
-                    >
-                        <X size={18} />
-                    </button>
+                <div style={{ top: '60px' }} className="absolute right-0 bg-white rounded-xl shadow-xl border border-gray-200 px-3 w-[250px] max-h-[360px] overflow-auto z-50">
+                    <div className="bg-white px-4 pt-4 sticky top-0 z-20">
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="absolute z-30 top-2 -right-3 text-gray-500 hover:text-black"
+                            aria-label="Cerrar"
+                        >
+                            <X size={18} />
+                        </button>
+                        <div className="flex justify-center items-center mb-2">
+                            <h2 className="text-sm font-semibold text-gray-700">Buscar animal</h2>
+                        </div>
 
-                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Buscar animal</h2>
-
-                    <Input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Nombre, ID, especie..."
-                        className="mb-3 text-sm"
-                    />
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Nombre, ID, especie..."
+                            className="mb-2 text-sm mt-4 px-4"
+                        />
+                    </div>
 
                     {allAnimals.length === 0 ? (
                         <p className="text-xs text-gray-400 text-center py-2">Sin resultados</p>
@@ -91,7 +94,7 @@ export default function SearchAnimal({ inside = [], outside = [], featuresMapRef
                                         className="w-full justify-start text-xs truncate text-left"
                                         onClick={() => handleSelect(a.value)}
                                     >
-                                        <PawPrint size={16} className="text-cyan-600 mr-2" />
+                                        <PawPrint size={16} className="text-blue-800 mr-2" />
                                         {a.label} - {a.full.especie}
                                     </Button>
                                 </li>

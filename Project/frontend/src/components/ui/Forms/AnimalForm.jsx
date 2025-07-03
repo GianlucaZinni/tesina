@@ -19,7 +19,7 @@ import {
 
 import { Info, PawPrint, Ruler, Heart, Venus, Mars, CircleDashed } from 'lucide-react';
 
-const schema = z.object({
+const schemaBase = z.object({
     animal_id: z.number().optional(),
     nombre: z.string().min(1, "El nombre es obligatorio."),
     especie_id: z.coerce.number().optional().nullable(),
@@ -27,21 +27,29 @@ const schema = z.object({
     raza_id: z.coerce.number().optional().nullable(),
     sexo_id: z.coerce.number().min(1, "El sexo es obligatorio.").optional(),
     fecha_nacimiento: z.string().optional(),
-    peso: z.coerce.number().min(0).optional().nullable(),
-    altura_cruz: z.coerce.number().min(0).optional().nullable(),
-    longitud_tronco: z.coerce.number().min(0).optional().nullable(),
-    perimetro_toracico: z.coerce.number().min(0).optional().nullable(),
-    ancho_grupa: z.coerce.number().min(0).optional().nullable(),
-    longitud_grupa: z.coerce.number().min(0).optional().nullable(),
+    peso: z.coerce.number().min(0, "Debe ser un número positivo").optional().nullable(),
+    altura_cruz: z.coerce.number().min(0, "Debe ser un número positivo").optional().nullable(),
+    longitud_tronco: z.coerce.number().min(0, "Debe ser un número positivo").optional().nullable(),
+    perimetro_toracico: z.coerce.number().min(0, "Debe ser un número positivo").optional().nullable(),
+    ancho_grupa: z.coerce.number().min(0, "Debe ser un número positivo").optional().nullable(),
+    longitud_grupa: z.coerce.number().min(0, "Debe ser un número positivo").optional().nullable(),
     estado_reproductivo_id: z.coerce.number().optional().nullable(),
     numero_partos: z.coerce.number().min(0).optional().nullable(),
     intervalo_partos: z.coerce.number().min(0).optional().nullable(),
-    fertilidad: z.coerce.number().min(0).max(100).optional().nullable(),
     ubicacion_sensor: z.string().optional().nullable(),
     parcela_id: z.coerce.number().optional().nullable(),
 });
 
 export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], animalOptions = {}, onCancel, onSave }) {
+
+    const schema = modoEdicion
+        ? schemaBase
+        : schemaBase.extend({
+            acronimo_identificacion: z.string()
+                .regex(/^[A-Za-z]{4}$/, "Debe contener exactamente 4 letras.")
+                .transform(val => val.toUpperCase()),
+        });
+
     const form = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -60,7 +68,6 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
             longitud_grupa: animal.longitud_grupa?.toString() || '',
             numero_partos: animal.numero_partos?.toString() || '',
             intervalo_partos: animal.intervalo_partos?.toString() || '',
-            fertilidad: animal.fertilidad?.toString() || '50',
             fecha_nacimiento: animal.fecha_nacimiento ? new Date(animal.fecha_nacimiento).toISOString().split('T')[0] : '',
             ubicacion_sensor: animal.ubicacion_sensor || '',
         },
@@ -119,13 +126,13 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
 
                     <Tabs defaultValue="general" className="space-y-8">
                         <TabsList className="flex flex-wrap gap-2 w-full p-2 rounded-lg">
-                            <TabsTrigger value="general" className="flex items-center gap-2 text-gray-700 data-[state=active]:bg-gray-600 data-[state=active]:text-white transition-colors duration-200 rounded-md py-2 px-4">
+                            <TabsTrigger value="general" className="flex items-center gap-2 text-gray-700 data-[state=active]:bg-gray-600 data-[state=active]:text-white transition-colors duration-200 rounded-xl py-2 px-4">
                                 <PawPrint className="h-5 w-5" /> <span className="hidden sm:inline">General</span>
                             </TabsTrigger>
-                            <TabsTrigger value="zoometria" className="flex items-center gap-2 text-gray-700 data-[state=active]:bg-gray-600 data-[state=active]:text-white transition-colors duration-200 rounded-md py-2 px-4">
+                            <TabsTrigger value="zoometria" className="flex items-center gap-2 text-gray-700 data-[state=active]:bg-gray-600 data-[state=active]:text-white transition-colors duration-200 rounded-xl py-2 px-4">
                                 <Ruler className="h-5 w-5" /> <span className="hidden sm:inline">Zoometría</span>
                             </TabsTrigger>
-                            <TabsTrigger value="reproduccion" className="flex items-center gap-2 text-gray-700 data-[state=active]:bg-gray-600 data-[state=active]:text-white transition-colors duration-200 rounded-md py-2 px-4">
+                            <TabsTrigger value="reproduccion" className="flex items-center gap-2 text-gray-700 data-[state=active]:bg-gray-600 data-[state=active]:text-white transition-colors duration-200 rounded-xl py-2 px-4">
                                 <Heart className="h-5 w-5" /> <span className="hidden sm:inline">Reproducción</span>
                             </TabsTrigger>
                         </TabsList>
@@ -149,14 +156,37 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                 </div>
 
                                 <div className="col-span-12 md:col-span-4">
-                                    <FormField control={form.control} name="numero_identificacion" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Número de Identificación</FormLabel>
-                                            <FormControl><Input {...field} disabled /></FormControl>
-                                            <FormDescription>Identificador único del animal.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
+                                    {modoEdicion ? (
+                                        <FormField control={form.control} name="numero_identificacion" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Número de Identificación</FormLabel>
+                                                <FormControl><Input {...field} disabled /></FormControl>
+                                                <FormDescription>Identificador único del animal.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    ) : (
+                                        <FormField control={form.control} name="acronimo_identificacion" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Acrónimo de Identificación</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        {...field}
+                                                        placeholder="Ej: ABCD (4 letras)"
+                                                        maxLength={4}
+                                                        onChange={(e) => {
+                                                            const onlyLetters = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+                                                            if (onlyLetters.length <= 4) {
+                                                                field.onChange(onlyLetters);
+                                                            }
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                                <FormDescription>Acrónimo de agrupación del animal.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    )}
                                 </div>
 
                                 <div className="col-span-12 md:col-span-4">
@@ -315,18 +345,17 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                             <FormLabel>Peso (kg)</FormLabel>
                                             <FormControl>
                                                 <div className="flex items-center gap-2">
-                                                    <Input type="number" {...field} placeholder="Ej: 500.5" />
+                                                    <Input type="number" min={0} {...field} placeholder="Ej: 500.5" />
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            <p>Peso del animal en kilogramos.</p>
+                                                            <p>Indica la masa corporal del animal en kilogramos.</p>
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 </div>
                                             </FormControl>
-                                            <FormMessage />
                                         </FormItem>
                                     )} />
                                 </div>
@@ -335,9 +364,18 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                         <FormItem>
                                             <FormLabel>Altura a la Cruz (cm)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" {...field} placeholder="Ej: 150" />
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="number" min={0} {...field} placeholder="Ej: 150" />
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Representa la distancia vertical desde el suelo hasta la protuberancia más alta de la escápula.</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
                                             </FormControl>
-                                            <FormMessage />
                                         </FormItem>
                                     )} />
                                 </div>
@@ -345,8 +383,19 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                     <FormField control={form.control} name="longitud_tronco" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Longitud del Tronco (cm)</FormLabel>
-                                            <FormControl><Input type="number" {...field} /></FormControl>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="number" min={0} {...field} placeholder="Ej: 90" />
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Medida desde la punta del hombro (articulación escápulo-humeral) hasta la punta del isquion.</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </FormControl>
                                         </FormItem>
                                     )} />
                                 </div>
@@ -354,8 +403,19 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                     <FormField control={form.control} name="perimetro_toracico" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Perímetro Torácico (cm)</FormLabel>
-                                            <FormControl><Input type="number" {...field} /></FormControl>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="number" min={0} {...field} placeholder="Ej: 212" />
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Medición de la circunferencia del tórax justo detrás de las paletas.</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </FormControl>
                                         </FormItem>
                                     )} />
                                 </div>
@@ -363,8 +423,22 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                     <FormField control={form.control} name="ancho_grupa" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Ancho de Grupa (cm)</FormLabel>
-                                            <FormControl><Input type="number" {...field} /></FormControl>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="number" min={0} {...field} placeholder="Ej: 112" />
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>
+                                                                Distancia transversal entre las tuberosidades coxales (puntas de las caderas).
+                                                                Es un indicador importante de la capacidad pélvica, especialmente relevante en hembras para evaluar la facilidad de parto (distocia).
+                                                            </p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </FormControl>
                                         </FormItem>
                                     )} />
                                 </div>
@@ -372,8 +446,19 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                     <FormField control={form.control} name="longitud_grupa" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Longitud de Grupa (cm)</FormLabel>
-                                            <FormControl><Input type="number" {...field} /></FormControl>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="number" min={0} {...field} placeholder="Ej: 98" />
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Medida longitudinal desde las tuberosidades ilíacas (puntas de la cadera) hasta las tuberosidades isquiáticas (puntas de la nalga).</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </FormControl>
                                         </FormItem>
                                     )} />
                                 </div>
@@ -409,7 +494,7 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                                             className={cn(field.value === 2 ? 'bg-blue-500' : 'bg-pink-500')}
                                                             icon={
                                                                 field.value === 2
-                                                                    ? <Mars className="h-5 w-5 text-blue-600" />
+                                                                    ? <Mars className="h-5 w-5 text-blue-800" />
                                                                     : <Venus className="h-5 w-5 text-pink-600" />
                                                             }
                                                         />
@@ -459,6 +544,7 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                             <FormControl>
                                                 <Input
                                                     type="number"
+                                                    min={0}
                                                     {...field}
                                                     disabled={isMale}
                                                     placeholder={isMale ? "Solo para hembras" : "Ej: 1"}
@@ -472,8 +558,8 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                 <div className="col-span-12 md:col-span-6">
                                     <FormField control={form.control} name="intervalo_partos" render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Intervalo entre Partos (días)</FormLabel>
-                                            <FormControl><Input type="number" {...field} disabled={isMale} placeholder={isMale ? "Solo para hembras" : "Ej: 365"} /></FormControl>
+                                            <FormLabel>Intervalo entre Partos</FormLabel>
+                                            <FormControl><Input type="number" min={0} {...field} disabled={isMale} placeholder={isMale ? "Solo para hembras" : "Ej: 365 (días)"} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
@@ -483,10 +569,10 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                     </Tabs>
 
                     <div className="pt-8 flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 border-t border-gray-200 mt-8">
-                        <Button type="button" variant="outline" onClick={onCancel} className="flex items-center gap-2 px-6 py-3 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                        <Button type="button" variant="outline" onClick={onCancel} className="flex items-center gap-2 px-6 py-3 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-200">
                             Cancelar
                         </Button>
-                        <Button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-md bg-black text-white hover:bg-gray-700 transition-colors duration-200 shadow-lg">
+                        <Button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-black text-white hover:bg-gray-700 transition-colors duration-200 shadow-lg">
                             <CircleDashed className="h-5 w-5" />
                             Guardar Animal
                         </Button>

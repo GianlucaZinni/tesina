@@ -78,7 +78,6 @@ export default function Header({ menuOpen, setMenuOpen }) {
                             ['Mapa', '/mapa'],
                             ['Parcelas', '/parcelas'],
                             ['Campos', '/campos'],
-                            ['Collares', '/collares'],
                             ['Alertas', '/alertas'],
                             ['Animales', '/animales']
                         ].map(([label, path]) => (

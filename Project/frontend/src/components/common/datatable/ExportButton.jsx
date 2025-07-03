@@ -126,7 +126,7 @@ export default function ExportButton({ table = null, filename = "data", entityTy
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDownloadTemplate} className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" /> Descargar Plantilla
+                    <FileText className="h-4 w-4 text-blue-800" /> Descargar Plantilla
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

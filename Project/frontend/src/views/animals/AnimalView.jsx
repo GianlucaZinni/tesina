@@ -30,7 +30,6 @@ import { ModalGenerico } from '@/components/common/Modals';
 // Componentes de Shadcn UI
 import { Button } from '@/components/ui/shadcn/button';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
-import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/shadcn/select';
 import { Label } from '@/components/ui/shadcn/label';
 
@@ -42,7 +41,6 @@ import {
     Plus,
     Bone,
     Tag,
-    RefreshCw,
     AlertCircle,
     CheckCircle,
     XCircle,
@@ -52,7 +50,6 @@ import {
     ChevronUp,
     Link,
     Info,
-    Loader2
 } from 'lucide-react';
 
 import AnimalsDataTable from "@/components/common/datatable/AnimalsDataTable";
@@ -144,6 +141,15 @@ export default function AnimalView() {
     const [collarColumnVisibility, setCollarColumnVisibility] = useState(getInitialCollarTableState().columnVisibility);
     const [collarRowSelection, setCollarRowSelection] = useState({});
 
+    const handleAnimalSearchChange = (value) => {
+        setTablePagination(prev => ({ ...prev, pageIndex: 0 }));
+        setTableGlobalFilter(value);
+    };
+
+    const handleCollarSearchChange = (value) => {
+        setCollarPagination(prev => ({ ...prev, pageIndex: 0 }));
+        setCollarFilter(value);
+    };
 
     const cargarDatos = useCallback(async () => {
 
@@ -277,9 +283,7 @@ export default function AnimalView() {
             }
             setMostrarFormularioAnimal(false);
             setFormData({});
-            if (modoEdicion || Object.keys(formData).length > 0) {
-                await cargarDatos();
-            }
+            await cargarDatos();
         } catch (error) {
             console.error("Error al guardar animal:", error);
             toast.error("Error al guardar el animal.", {
@@ -589,21 +593,14 @@ export default function AnimalView() {
     }, [collarFilter, collarSorting, collarPagination, collarColumnVisibility]);
 
     return (
-        <div className="p-6 sm:p-8 md:p-10 lg:p-12 xl:p-16 bg-gray-50 min-h-screen">
+        <div className="px-6 py-20 sm:px-8 md:px-10 lg:px-12 xl:px-16 bg-white min-h-screen">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 leading-tight">
-                    <Bone className="inline-block h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-blue-600 mr-2 sm:mr-3 align-middle" />
+                    <Bone className="inline-block h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-blue-800 mr-2 sm:mr-3 align-middle" />
                     Gestión de Animales
                 </h1>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                    <Button
-                        onClick={cargarDatos}
-                        variant="outline"
-                        className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-100 w-full sm:w-auto"
-                    >
-                        <RefreshCw className="h-4 w-4" /> Recargar Datos
-                    </Button>
-                    <Button onClick={handleNuevoAnimal} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md w-full sm:w-auto">
+                    <Button onClick={handleNuevoAnimal} className="gap-2 bg-blue-800 hover:bg-blue-700 text-white shadow-md w-full sm:w-auto">
                         <Plus className="h-4 w-4" /> Nuevo Animal
                     </Button>
                 </div>
@@ -622,7 +619,7 @@ export default function AnimalView() {
                             onEditRow={handleEditarAnimal}
                             onDeleteRow={(animal) => setModalEliminarAnimal({ abierto: true, animal: animal })}
                             globalFilter={tableGlobalFilter}
-                            setGlobalFilter={setTableGlobalFilter}
+                            setGlobalFilter={handleAnimalSearchChange}
                             rowSelection={tableRowSelection}
                             setRowSelection={setTableRowSelection}
                             sorting={tableSorting}
@@ -656,7 +653,7 @@ export default function AnimalView() {
                             collarStatesOptions={collarStatesOptions}
                             onImportSuccess={cargarDatos}
                             globalFilter={collarFilter}
-                            setGlobalFilter={setCollarFilter}
+                            setGlobalFilter={handleCollarSearchChange}
                             rowSelection={collarRowSelection}
                             setRowSelection={setCollarRowSelection}
                             sorting={collarSorting}

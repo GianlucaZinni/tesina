@@ -56,7 +56,7 @@ function Placeholder({ label }) {
 
 function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
-    if (loading) return <div className="text-center text-blue-600 mt-10">Verificando sesión...</div>;
+    if (loading) return <div className="text-center text-blue-800 mt-10">Verificando sesión...</div>;
     if (!isAuthenticated) return <Navigate to="/login" replace />;
     return children;
 }
