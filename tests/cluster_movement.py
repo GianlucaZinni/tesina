@@ -12,8 +12,8 @@ from shapely.geometry import shape, Point
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
-from Project import create_app, db
-from Project.models import Animal, Ubicacion, UbicacionActual, Collar, AsignacionCollar
+from backend.app import create_app, db
+from backend.app.models import Animal, Ubicacion, UbicacionActual, Collar, AsignacionCollar
 
 
 def get_random_point_within(polygon):

@@ -1,5 +1,5 @@
-from Project import db
-from Project.models import (
+from backend.app import db
+from backend.app.models import (
     Campo,
     Parcela,
     EstadoCollar,

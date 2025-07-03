@@ -1,0 +1,46 @@
+.
+├── DB_CONFIG.json
+├── LICENSE
+├── README.md
+├── backend
+│   ├── README.md
+│   ├── __init__.py
+│   └── app
+├── database
+│   ├── files
+│   ├── scripts
+│   └── sql
+├── database.sqlite
+├── docs
+│   ├── dashboards.txt
+│   ├── diagramas
+│   ├── pasos.txt
+│   └── prompt frontend
+├── frontend
+│   ├── README.md
+│   ├── components.json
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── jsconfig.json
+│   ├── meta
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── project-tree.txt
+│   ├── public
+│   ├── src
+│   ├── tailwind.config.js
+│   └── vite.config.js
+├── project-tree.txt
+├── requirements.txt
+├── scripts
+│   ├── execute.py
+│   └── run.py
+├── tests
+│   ├── cluster_movement.py
+│   └── test_api_gateway.py
+└── tools
+    ├── Mqtt
+    └── Nodo
+
+18 directories, 26 files
