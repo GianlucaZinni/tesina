@@ -5,27 +5,30 @@ from backend.app.models import Ubicacion, Temperatura, Acelerometro, NodoAutoriz
 from datetime import datetime
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
+import logging
+
+logger = logging.getLogger(__name__)
 
 api_gateway = Blueprint('api_gateway', __name__, url_prefix="/api")
 
 @api_gateway.route('/datos', methods=['POST'])
 def recibir_datos():
     data = request.get_json()
-    print(data)
-    print("HEADER:", request.headers)
+    logger.debug(data)
+    logger.debug("HEADER: %s", request.headers)
 
     if not data:
         return jsonify({"status": "error", "message": "Datos JSON faltantes"}), 400
 
     # Autenticación basada en client_id (nodo autorizado)
     client_id = request.headers.get("X-Client-ID")
-    print(client_id)
+    logger.debug("client_id: %s", client_id)
 
     if not client_id:
         return jsonify({"status": "error", "message": "Falta el encabezado 'X-Client-ID'"}), 401
 
     nodo = NodoAutorizado.query.filter_by(client_id=client_id, esta_autorizado=True).first()
-    print(nodo)
+    logger.debug("nodo: %s", nodo)
     if not nodo:
         return jsonify({"status": "error", "message": "Nodo no autorizado"}), 403
 

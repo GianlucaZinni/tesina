@@ -6,4 +6,7 @@ static_files = Blueprint('static_files', __name__)
 
 @static_files.route('/dist/<path:filename>')
 def serve_dist_file(filename):
-    return send_from_directory(os.path.join(current_app.root_path, 'static', 'dist'), filename)
+    return send_from_directory(
+        os.path.join(current_app.static_folder, 'dist'),
+        filename
+    )

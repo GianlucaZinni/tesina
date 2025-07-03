@@ -1,6 +1,8 @@
 from datetime import timedelta
+import os
 from flask import Flask
 from flask_cors import CORS
+import logging
 
 from backend.app.config import get_config
 from backend.app.db import db
@@ -12,8 +14,14 @@ def create_app(config_object=None):
     if config_object is None:
         config_object = get_config()
 
-    app = Flask(__name__)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    templates_path = os.path.join(project_root, "templates")
+    static_path = os.path.join(project_root, "static")
+    app = Flask(__name__, template_folder=templates_path, static_folder=static_path)
     app.config.from_object(config_object)
+
+    logging.basicConfig(level=logging.DEBUG if app.config.get('DEBUG') else logging.INFO)
+    app.logger.setLevel(logging.DEBUG if app.config.get('DEBUG') else logging.INFO)
 
     db.init_app(app)
     login_manager.init_app(app)
