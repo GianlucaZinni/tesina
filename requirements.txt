@@ -10,3 +10,8 @@ mysql-connector-python
 pymysql
 Flask-WTF
 cryptography
+fastapi
+uvicorn
+flask_cors
+shapely
+requests
