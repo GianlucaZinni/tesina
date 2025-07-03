@@ -1,4 +1,4 @@
-from backend.app import db
+from backend.app.db import SessionLocal
 from backend.app.models import (
     Campo,
     Parcela,
@@ -16,7 +16,8 @@ import json
 
 
 def populate_static_data():
-    if Campo.query.count() > 0:
+    session = SessionLocal()
+    if session.query(Campo).count() > 0:
         return
 
     # Crear campos
@@ -35,8 +36,9 @@ def populate_static_data():
         lon=-59.9720424413681,
         usuario_id=1,
     )
-    db.session.add_all([campo1, campo2])
-    db.session.commit()
+    session.add_all([campo1, campo2])
+    session.commit()
+    session.close()
 
     # Crear parcelas
     parcela1 = Parcela(
@@ -100,24 +102,24 @@ def populate_static_data():
         }),
         campo_id=campo2.id,
     )
-    db.session.add_all([parcela1, parcela2, parcela3])
-    db.session.commit()
+    session.add_all([parcela1, parcela2, parcela3])
+    session.commit()
 
     # Crear sexos
-    db.session.add_all([Sexo(nombre="H"), Sexo(nombre="M")])
-    db.session.commit()
+    session.add_all([Sexo(nombre="H"), Sexo(nombre="M")])
+    session.commit()
 
     # Crear estados de los collares
-    db.session.add_all([EstadoCollar(nombre="activo"), EstadoCollar(nombre="disponible"), EstadoCollar(nombre="sin bateria"), EstadoCollar(nombre="defectuoso")])
-    db.session.commit()
+    session.add_all([EstadoCollar(nombre="activo"), EstadoCollar(nombre="disponible"), EstadoCollar(nombre="sin bateria"), EstadoCollar(nombre="defectuoso")])
+    session.commit()
 
     # Crear especies
     especies_data = [
         "Bovino", "Ovino", "Porcino", "Equino", "Caprino", "Aves"
     ]
     especies = [Especie(nombre=nombre) for nombre in especies_data]
-    db.session.add_all(especies)
-    db.session.flush()
+    session.add_all(especies)
+    session.flush()
 
     # Crear tipos
     tipos_data = [
@@ -146,8 +148,8 @@ def populate_static_data():
         especie = next(e for e in especies if e.nombre == especie_nombre)
         tipos.append(Tipo(nombre=nombre, especie_id=especie.id))
 
-    db.session.add_all(tipos)
-    db.session.flush()
+    session.add_all(tipos)
+    session.flush()
 
     # Crear razas (con especie_id y tipo_id correctos según tu planteo)
     razas_data = [
@@ -248,8 +250,8 @@ def populate_static_data():
         tipo = next(t for t in tipos if t.nombre == tipo_nombre and t.especie_id == especie.id)
         razas.append(Raza(nombre=nombre, especie_id=especie.id, tipo_id=tipo.id))
 
-    db.session.add_all(razas)
-    db.session.commit()
+    session.add_all(razas)
+    session.commit()
 
     estados_por_sexo_especie = {
         "H": {
@@ -281,8 +283,8 @@ def populate_static_data():
                 estados_reproductivos.append(
                     EstadoReproductivo(nombre=nombre_estado, sexo_id=sexo.id, especie_id=especie.id)
                 )
-    db.session.add_all(estados_reproductivos)
-    db.session.commit()
+    session.add_all(estados_reproductivos)
+    session.commit()
 
     # Rangos biométricos por especie
     rangos = {
@@ -397,10 +399,10 @@ def populate_static_data():
             raza_id=raza.id,
             sexo_id=sexo.id
         )
-        db.session.add(animal)
-        db.session.flush()
+        session.add(animal)
+        session.flush()
 
-    db.session.commit()
+    session.commit()
 
 
 # def nodos_autorizados():
@@ -417,5 +419,5 @@ def populate_static_data():
 #             usuario_id=1,
 #             observaciones="",
 #         )
-#         db.session.add(nodo)
-#     db.session.commit()
+#         session.add(nodo)
+#     session.commit()

@@ -1,8 +1,8 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from backend.app import db
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint
+from backend.app.db import Base
 from datetime import datetime
 
-class AsignacionCollar(db.Model):
+class AsignacionCollar(Base):
     __tablename__ = 'asignaciones_collar'
     id = Column(Integer, primary_key=True)
     collar_id = Column(Integer, ForeignKey('collares.id'), nullable=False)
@@ -13,5 +13,5 @@ class AsignacionCollar(db.Model):
     motivo_cambio = Column(String(100))
 
     __table_args__ = (
-        db.UniqueConstraint('collar_id', 'fecha_fin', name='uq_collar_activo'),
+        UniqueConstraint('collar_id', 'fecha_fin', name='uq_collar_activo'),
     )

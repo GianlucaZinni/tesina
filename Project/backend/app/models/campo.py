@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Float, Boolean, ForeignKey
-from backend.app import db
+from backend.app.db import Base
 
-class Campo(db.Model):
+class Campo(Base):
     __tablename__ = 'campos'
     id = Column(Integer, primary_key=True)
     nombre = Column(String(100), nullable=False)

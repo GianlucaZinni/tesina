@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Float, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class Temperatura(db.Model):
+class Temperatura(Base):
     __tablename__ = 'temperaturas'
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)

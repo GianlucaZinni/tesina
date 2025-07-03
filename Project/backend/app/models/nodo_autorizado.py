@@ -1,9 +1,9 @@
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 from datetime import datetime
 
-class NodoAutorizado(db.Model):
+class NodoAutorizado(Base):
     __tablename__ = 'nodos_autorizados'
     id = Column(Integer, primary_key=True)
     collar_id = Column(Integer, ForeignKey('collares.id'), unique=True, nullable=False)

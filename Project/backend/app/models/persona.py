@@ -1,8 +1,9 @@
 from sqlalchemy import Column, String, Integer, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class Persona(db.Model):
+
+class Persona(Base):
     __tablename__ = "personas"
     id_persona = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(50), nullable=False)

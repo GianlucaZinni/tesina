@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey
-from backend.app import db
+from backend.app.db import Base
 
-class EstadoReproductivo(db.Model):
+class EstadoReproductivo(Base):
     __tablename__ = 'estado_reproductivo_animales'
     id = Column(Integer, primary_key=True)
     nombre = Column(String(50), nullable=False)

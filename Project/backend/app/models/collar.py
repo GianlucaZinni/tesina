@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class Collar(db.Model):
+class Collar(Base):
     __tablename__ = 'collares'
     id = Column(Integer, primary_key=True)
     codigo = Column(String(50), unique=True, nullable=False)

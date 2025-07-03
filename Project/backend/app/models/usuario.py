@@ -1,20 +1,9 @@
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db, login_manager
-from flask_login import UserMixin
-from flask import abort
 
-from .tipo_usuario import TipoUsuario
+from backend.app.db import Base
 
-@login_manager.user_loader
-def user_loader(user_id):
-    return Usuario.query.filter_by(id=user_id).first()
-
-@login_manager.unauthorized_handler
-def unauthorized_callback():
-    abort(401)
-
-class Usuario(UserMixin, db.Model):
+class Usuario(Base):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Float, Integer, DateTime, ForeignKey
-from backend.app import db
+from sqlalchemy import Column, Float, Integer, DateTime, ForeignKey, Index
+from backend.app.db import Base
 
-class Ubicacion(db.Model):
+class Ubicacion(Base):
     __tablename__ = 'ubicaciones'
 
     __table_args__ = (
-        db.Index('idx_collar_timestamp', 'collar_id', 'timestamp'),
+        Index('idx_collar_timestamp', 'collar_id', 'timestamp'),
     )
 
     id = Column(Integer, primary_key=True)

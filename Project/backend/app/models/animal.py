@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, Integer, Date, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class Animal(db.Model):
+class Animal(Base):
     __tablename__ = 'animales'
     id = Column(Integer, primary_key=True)
     nombre = Column(String(50), nullable=False)

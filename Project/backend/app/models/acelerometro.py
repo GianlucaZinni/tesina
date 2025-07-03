@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Float, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class Acelerometro(db.Model):
+class Acelerometro(Base):
     __tablename__ = 'aceleraciones'
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime)

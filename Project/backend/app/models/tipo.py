@@ -1,8 +1,8 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class Tipo(db.Model):
+class Tipo(Base):
     __tablename__ = 'tipos_animales'
     id = Column(Integer, primary_key=True)
     nombre = Column(String(50), nullable=False)
@@ -10,7 +10,7 @@ class Tipo(db.Model):
     razas = relationship('Raza', backref='tipo', lazy=True)
 
     __table_args__ = (
-        db.UniqueConstraint('nombre', 'especie_id', name='uix_tipo_nombre_especie'),
+        UniqueConstraint('nombre', 'especie_id', name='uix_tipo_nombre_especie'),
     )
 
     def __repr__(self):

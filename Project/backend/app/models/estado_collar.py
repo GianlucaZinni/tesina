@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class EstadoCollar(db.Model):
+class EstadoCollar(Base):
     __tablename__ = 'estado_collar_animales'
     id = Column(Integer, primary_key=True)
     nombre = Column(String(50), nullable=False)

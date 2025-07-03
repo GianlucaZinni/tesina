@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Float, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app import db
+from backend.app.db import Base
 
-class UbicacionActual(db.Model):
+class UbicacionActual(Base):
     __tablename__ = 'ubicacion_actual'
     id = Column(Integer, primary_key=True)
     animal_id = Column(Integer, ForeignKey('animales.id'), unique=True)
