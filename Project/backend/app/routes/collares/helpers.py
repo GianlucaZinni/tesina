@@ -1,19 +1,17 @@
 from datetime import datetime
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
-
-from backend.app.db import get_db
 from backend.app.models import (
+    Collar,
     AsignacionCollar,
     EstadoCollar,
 )
-from backend.app.models import Collar, AsignacionCollar, EstadoCollar
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def get_estado_id(nombre: str, db: Session = Depends(get_db)) -> int:
+def get_estado_id(nombre: str, db: Session) -> int:
     """Return state ID by name, raising 500 if not found."""
     estado = (
         db.query(EstadoCollar)
@@ -25,14 +23,14 @@ def get_estado_id(nombre: str, db: Session = Depends(get_db)) -> int:
     return estado.id
 
 
-def get_estado_nombre(estado_id: int, db: Session = Depends(get_db)) -> str:
+def get_estado_nombre(estado_id: int, db: Session) -> str:
     """Return state name by id, raising 500 if not found."""
     estado = db.query(EstadoCollar).filter(EstadoCollar.id == estado_id).first()
     if not estado:
         raise HTTPException(500, f"Estado '{estado_id}' no encontrado")
     return estado.nombre
 
-def create_new_collar_logic(codigo, db: Session = Depends(get_db)):
+def create_new_collar_logic(codigo, db: Session):
     """Crea un nuevo collar con estado 'disponible' y batería 100%."""
     estado_disponible = get_estado_id("disponible", db)
     new_collar = Collar(
@@ -45,18 +43,21 @@ def create_new_collar_logic(codigo, db: Session = Depends(get_db)):
     db.flush()
     return new_collar
 
-def end_active_assignment(assignment, db: Session = Depends(get_db)):
+def end_active_assignment(assignment, db: Session):
     """Finaliza una asignación activa."""
     if assignment and assignment.fecha_fin is None:
         assignment.fecha_fin = datetime.now()
         db.add(assignment)
 
         old_collar = db.get(Collar, assignment.collar_id)
-        if old_collar and old_collar.estado_collar_id not in [get_estado_id("sin bateria"), get_estado_id("defectuoso")]:
-            old_collar.estado_collar_id = get_estado_id("disponible")
+        if old_collar and old_collar.estado_collar_id not in [
+            get_estado_id("sin bateria", db),
+            get_estado_id("defectuoso", db),
+        ]:
+            old_collar.estado_collar_id = get_estado_id("disponible", db)
             db.add(old_collar)
     
-def create_new_assignment_logic(collar_id, animal_id, usuario_id, db: Session = Depends(get_db)):
+def create_new_assignment_logic(collar_id, animal_id, usuario_id, db: Session):
     """Crea una nueva asignación de collar y pone el collar en estado 'activo'."""
     estado_activo = get_estado_id("activo", db)
     if estado_activo is None:
@@ -77,7 +78,7 @@ def create_new_assignment_logic(collar_id, animal_id, usuario_id, db: Session = 
         db.add(collar)
     return new_assignment
 
-def assign_collar(collar, animal_to_assign, current_user_id, db: Session = Depends(get_db)):
+def assign_collar(collar, animal_to_assign, current_user_id, db: Session):
     """
     Gestiona la asignación de un collar a un animal.
     Finaliza asignaciones previas si es necesario.
@@ -101,6 +102,9 @@ def assign_collar(collar, animal_to_assign, current_user_id, db: Session = Depen
             collar.id, animal_to_assign.id, current_user_id, db
         )
     else: # Si animal_to_assign es None, el collar queda desasignado y pasa a disponible
-        if collar.estado_collar_id not in [get_estado_id("sin bateria"), get_estado_id("defectuoso")]:
-            collar.estado_collar_id = get_estado_id("disponible")
+        if collar.estado_collar_id not in [
+            get_estado_id("sin bateria", db),
+            get_estado_id("defectuoso", db),
+        ]:
+            collar.estado_collar_id = get_estado_id("disponible", db)
             db.add(collar)

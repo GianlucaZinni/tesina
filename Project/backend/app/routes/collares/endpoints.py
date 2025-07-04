@@ -1,6 +1,8 @@
 from typing import List, Dict
 from datetime import datetime
 import re
+import csv
+from io import StringIO
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import UploadFile, File
 from sqlalchemy.orm import Session
@@ -72,7 +74,36 @@ def import_collares(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    pass
+    content = file.file.read().decode()
+    reader = csv.reader(StringIO(content))
+    next(reader, None)  # skip header
+    created = 0
+    assigned = 0
+    for row in reader:
+        if len(row) < 2:
+            continue
+        numero_identificacion = row[0].strip()
+        codigo = row[1].strip().upper()
+        if not codigo:
+            continue
+
+        collar = db.query(Collar).filter_by(codigo=codigo).first()
+        if not collar:
+            collar = create_new_collar_logic(codigo, db)
+            created += 1
+
+        animal = None
+        if numero_identificacion:
+            animal = (
+                db.query(Animal)
+                .filter_by(numero_identificacion=numero_identificacion)
+                .first()
+            )
+        assign_collar(collar, animal, current_user.id, db)
+        assigned += 1
+
+    db.commit()
+    return {"status": "ok", "created": created, "assigned": assigned}
 
 
 @router.get("/export")
@@ -80,7 +111,22 @@ def export_collares(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    pass
+    collares = db.query(Collar).all()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["numero_identificacion", "codigo"])
+    for c in collares:
+        asignacion = (
+            db.query(AsignacionCollar)
+            .filter_by(collar_id=c.id, fecha_fin=None)
+            .first()
+        )
+        numero = ""
+        if asignacion:
+            animal = db.get(Animal, asignacion.animal_id)
+            numero = animal.numero_identificacion if animal else ""
+        writer.writerow([numero, c.codigo])
+    return output.getvalue()
 
 
 @router.get("/export/template")
@@ -88,7 +134,10 @@ def export_template(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    pass
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["numero_identificacion", "codigo"])
+    return output.getvalue()
 
 
 @router.get("/", response_model=List[Dict])

@@ -1,5 +1,3 @@
-# ~/tests/simulador_posiciones.py
-
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -10,10 +8,16 @@ import time
 from datetime import datetime
 from shapely.geometry import shape, Point
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, Session
 
-from Project import create_app, db
-from Project.models import Animal, Ubicacion, UbicacionActual, Collar, AsignacionCollar
+from backend.app import create_app
+from backend.app.db import SessionLocal
+from backend.app.models import (
+    Animal,
+    Ubicacion,
+    UbicacionActual,
+    AsignacionCollar,
+)
 
 
 def get_random_point_within(polygon):
@@ -24,8 +28,8 @@ def get_random_point_within(polygon):
             return p
 
 
-def initialize_positions():
-    animales = db.session.query(Animal).options(joinedload(Animal.parcela)).all()
+def initialize_positions(db: Session):
+    animales = db.query(Animal).options(joinedload(Animal.parcela)).all()
     for animal in animales:
         if not animal.parcela or not animal.parcela.perimetro_geojson:
             continue
@@ -39,7 +43,7 @@ def initialize_positions():
 
         punto = get_random_point_within(polygon)
 
-        collar_id = db.session.query(AsignacionCollar.collar_id).filter(
+        collar_id = db.query(AsignacionCollar.collar_id).filter(
             AsignacionCollar.animal_id == animal.id,
             AsignacionCollar.fecha_fin.is_(None)
         ).scalar()
@@ -53,15 +57,15 @@ def initialize_positions():
             lon=punto.x,
             collar_id=collar_id
         )
-        db.session.add(ubicacion)
-    db.session.commit()
+        db.add(ubicacion)
+    db.commit()
     print("Inicialización completa.")
 
 
-def update_positions():
+def update_positions(db: Session):
     # Subconsulta que devuelve (collar_id, timestamp) más reciente
     subq = (
-        db.session.query(
+        db.query(
             Ubicacion.collar_id,
             func.max(Ubicacion.timestamp).label("max_ts")
         )
@@ -71,7 +75,7 @@ def update_positions():
 
     # Join entre Ubicacion y subconsulta para obtener las últimas ubicaciones por collar
     posiciones = (
-        db.session.query(Ubicacion)
+        db.query(Ubicacion)
         .join(subq, (Ubicacion.collar_id == subq.c.collar_id) & (Ubicacion.timestamp == subq.c.max_ts))
         .all()
     )
@@ -88,31 +92,31 @@ def update_positions():
             lon=nuevo_punto.x,
             collar_id=pos.collar_id
         )
-        db.session.add(nueva_ubicacion)
+        db.add(nueva_ubicacion)
 
-    db.session.commit()
+    db.commit()
 
-def update_ubicacion_actual():
-    subquery = db.session.query(
+def update_ubicacion_actual(db: Session):
+    subquery = db.query(
         Ubicacion.collar_id,
         func.max(Ubicacion.timestamp).label("max_ts")
     ).group_by(Ubicacion.collar_id).subquery()
 
-    ubicaciones = db.session.query(Ubicacion).join(
+    ubicaciones = db.query(Ubicacion).join(
         subquery,
         (Ubicacion.collar_id == subquery.c.collar_id) &
         (Ubicacion.timestamp == subquery.c.max_ts)
     ).all()
 
     for ubic in ubicaciones:
-        asignacion = db.session.query(AsignacionCollar).filter_by(
+        asignacion = db.query(AsignacionCollar).filter_by(
             collar_id=ubic.collar_id,
             fecha_fin=None
         ).first()
         if not asignacion:
             continue
 
-        ubic_actual = db.session.query(UbicacionActual).filter_by(
+        ubic_actual = db.query(UbicacionActual).filter_by(
             animal_id=asignacion.animal_id
         ).first()
 
@@ -122,22 +126,22 @@ def update_ubicacion_actual():
         ubic_actual.timestamp = ubic.timestamp
         ubic_actual.lat = ubic.lat
         ubic_actual.lon = ubic.lon
-        db.session.merge(ubic_actual)
-    db.session.commit()
+        db.merge(ubic_actual)
+    db.commit()
 
 
 def run_simulation():
-    print("Inicializando posiciones...")
-    initialize_positions()
-    print("Comenzando simulación...")
-    while True:
-        update_positions()
-        update_ubicacion_actual()
-        print(f"[{datetime.now()}] Posiciones actualizadas.")
-        time.sleep(10)
+    with SessionLocal() as db:
+        print("Inicializando posiciones...")
+        initialize_positions(db)
+        print("Comenzando simulación...")
+        while True:
+            update_positions(db)
+            update_ubicacion_actual(db)
+            print(f"[{datetime.now()}] Posiciones actualizadas.")
+            time.sleep(10)
 
 
 if __name__ == "__main__":
-    app = create_app()
-    with app.app_context():
-        run_simulation()
+    create_app()
+    run_simulation()
