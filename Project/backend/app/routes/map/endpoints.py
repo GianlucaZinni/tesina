@@ -1,18 +1,20 @@
-# ~/backend.app /backend/src/Routes/map/routes.py
-from flask import Blueprint, request, jsonify
-from flask_login import current_user, login_required
-from backend.app  import db
-from backend.app.models import Campo, Parcela
+from typing import Optional
 import json
 
-map = Blueprint("map", __name__, url_prefix="/map/api")
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-# MAP DATA
+from backend.app.db import get_db
+from backend.app.login_manager import get_current_user
+from backend.app.models import Campo, Parcela
 
-@map.route('/parcelas')
-@login_required
-def api_data_map():
-    campos_usuario = Campo.query.filter_by(usuario_id=current_user.id).all()
+
+router = APIRouter(prefix="/map/api")
+
+
+@router.get("/parcelas")
+def api_data_map(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    campos_usuario = db.query(Campo).filter_by(usuario_id=current_user.id).all()
 
     campos_data = {
         c.id: {
@@ -55,30 +57,32 @@ def api_data_map():
         center_lon = -63.0
         campo_preferido_id = None
 
-    return jsonify({
+    return {
         "campos": campos_data,
         "parcelas": parcelas_data,
         "center": {"lat": center_lat, "lon": center_lon},
         "campo_preferido_id": campo_preferido_id
-    })
+    }
 
 
 # CAMPOS CRUD
 
-@map.route("/campos/create", methods=["POST"])
-@login_required
-def api_create_campo():
-    data = request.get_json()
+@router.post("/campos/create")
+def api_create_campo(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     nombre = data.get("nombre")
     descripcion = data.get("descripcion")
     lat = data.get("lat")
     lon = data.get("lon")
 
     if not nombre or not descripcion or not lat or not lon:
-        return jsonify({"status": "error", "message": "Faltan datos obligatorios"}), 400
+        raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
 
     # Si no existen campos previos, este será el preferido
-    campos_existentes = Campo.query.filter_by(usuario_id=current_user.id).count()
+    campos_existentes = db.query(Campo).filter_by(usuario_id=current_user.id).count()
     nuevo = Campo(
         nombre=nombre,
         descripcion=descripcion,
@@ -87,46 +91,56 @@ def api_create_campo():
         usuario_id=current_user.id,
         is_preferred=(campos_existentes == 0)
     )
-    db.session.add(nuevo)
-    db.session.commit()
+    db.add(nuevo)
+    db.commit()
+    return {"status": "ok", "message": "Campo creado correctamente"}
 
-    return jsonify({"status": "ok", "message": "Campo creado correctamente"})
-
-@map.route("/campos/<int:campo_id>/update", methods=["POST"])
-@login_required
-def api_update_campo(campo_id):
-    campo = Campo.query.get_or_404(campo_id)
+@router.post("/campos/{campo_id}/update")
+def api_update_campo(
+    campo_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    campo = db.get(Campo, campo_id)
+    if not campo:
+        raise HTTPException(status_code=404, detail="Campo no encontrado")
     if campo.usuario_id != current_user.id:
-        return jsonify({"status": "error", "message": "No autorizado"}), 403
-
-    data = request.get_json()
+        raise HTTPException(status_code=403, detail="No autorizado")
     campo.nombre = data.get("nombre", campo.nombre)
     campo.descripcion = data.get("descripcion", campo.descripcion)
     campo.lat = float(data.get("lat", campo.lat))
     campo.lon = float(data.get("lon", campo.lon))
 
-    db.session.commit()
-    return jsonify({"status": "ok", "message": "Campo actualizado correctamente"})
+    db.commit()
+    return {"status": "ok", "message": "Campo actualizado correctamente"}
 
-@map.route("/campos/<int:campo_id>/delete", methods=["DELETE"])
-@login_required
-def api_delete_campo(campo_id):
-    campo = Campo.query.get_or_404(campo_id)
+@router.delete("/campos/{campo_id}/delete")
+def api_delete_campo(
+    campo_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    campo = db.get(Campo, campo_id)
+    if not campo:
+        raise HTTPException(status_code=404, detail="Campo no encontrado")
     if campo.usuario_id != current_user.id:
-        return jsonify({"status": "error", "message": "No autorizado"}), 403
+        raise HTTPException(status_code=403, detail="No autorizado")
 
-    db.session.delete(campo)
-    db.session.commit()
+    db.delete(campo)
+    db.commit()
 
-    return jsonify({"status": "ok", "message": "Campo eliminado correctamente"})
+    return {"status": "ok", "message": "Campo eliminado correctamente"}
 
 
 # PARCELAS CRUD
 
-@map.route('/parcelas/create', methods=['POST'])
-@login_required
-def api_create_parcela():
-    data = request.get_json()
+@router.post('/parcelas/create')
+def api_create_parcela(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     campo_id = data.get("campo_id")
     nombre = data.get("nombre")
     descripcion = data.get("descripcion")
@@ -134,11 +148,11 @@ def api_create_parcela():
     perimetro_geojson = data.get("perimetro_geojson")
 
     if not campo_id or not nombre or not perimetro_geojson:
-        return jsonify({"status": "error", "message": "Faltan datos obligatorios"}), 400
+        raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
 
-    campo = Campo.query.get(campo_id)
+    campo = db.get(Campo, campo_id)
     if not campo or campo.usuario_id != current_user.id:
-        return jsonify({"status": "error", "message": "Campo no válido o no autorizado"}), 403
+        raise HTTPException(status_code=403, detail="Campo no válido o no autorizado")
 
     nueva = Parcela(
         nombre=nombre,
@@ -147,26 +161,30 @@ def api_create_parcela():
         area=area,
         campo_id=campo_id
     )
-    db.session.add(nueva)
-    db.session.commit()
+    db.add(nueva)
+    db.commit()
 
-    return jsonify({"status": "ok", "message": "Parcela creada correctamente"})
+    return {"status": "ok", "message": "Parcela creada correctamente"}
 
-@map.route('/parcelas/<int:parcela_id>/update', methods=['POST'])
-@login_required
-def api_update_parcela(parcela_id):
-    parcela = Parcela.query.get_or_404(parcela_id)
+@router.post('/parcelas/{parcela_id}/update')
+def api_update_parcela(
+    parcela_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    parcela = db.get(Parcela, parcela_id)
+    if not parcela:
+        raise HTTPException(status_code=404, detail="Parcela no encontrada")
     if parcela.campo.usuario_id != current_user.id:
-        return {"status": "error", "message": "No autorizado"}, 403
-
-    data = request.get_json()
+        raise HTTPException(status_code=403, detail="No autorizado")
     nuevo_geojson = data.get("geojson")
     nuevo_nombre = data.get("nombre")
     nueva_descripcion = data.get("descripcion")
     nueva_area = data.get("area")
 
     if not nuevo_geojson:
-        return {"status": "error", "message": "GeoJSON faltante"}, 400
+        raise HTTPException(status_code=400, detail="GeoJSON faltante")
 
     parcela.perimetro_geojson = json.dumps(nuevo_geojson)
     parcela.area = nueva_area
@@ -177,18 +195,26 @@ def api_update_parcela(parcela_id):
     if nueva_descripcion:
         parcela.descripcion = nueva_descripcion
 
-    db.session.commit()
+    db.commit()
     return {"status": "ok", "message": "Parcela actualizada correctamente"}
 
-@map.route("/parcelas/<int:parcela_id>/delete", methods=["DELETE"])
-@login_required
-def api_delete_parcela(parcela_id):
-    parcela = Parcela.query.get_or_404(parcela_id)
+@router.delete("/parcelas/{parcela_id}/delete")
+def api_delete_parcela(
+    parcela_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    parcela = db.get(Parcela, parcela_id)
+    if not parcela:
+        raise HTTPException(status_code=404, detail="Parcela no encontrada")
 
     if parcela.campo.usuario_id != current_user.id:
-        return jsonify({"status": "error", "message": "No autorizado"}), 403
+        raise HTTPException(status_code=403, detail="No autorizado")
 
-    db.session.delete(parcela)
-    db.session.commit()
+    db.delete(parcela)
+    db.commit()
 
-    return jsonify({"status": "ok", "message": "Parcela eliminada correctamente"})
+    return {"status": "ok", "message": "Parcela eliminada correctamente"}
+
+
+__all__ = ["router"]

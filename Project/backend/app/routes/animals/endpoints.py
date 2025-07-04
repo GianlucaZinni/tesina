@@ -20,7 +20,7 @@ from backend.app.models import (
 )
 from datetime import datetime
 
-from backend.app.routes.collares.routes import get_estado_collar_id
+from Project.backend.app.routes.collares.endpoints import get_estado_collar_id
 
 from shapely.geometry import shape, Point
 import json
