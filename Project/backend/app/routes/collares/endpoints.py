@@ -42,7 +42,6 @@ def list_available(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    available_id = get_estado_id("disponible", db)
     assigned = (
         db.query(AsignacionCollar.collar_id)
         .filter(AsignacionCollar.fecha_fin.is_(None))
@@ -50,14 +49,14 @@ def list_available(
     )
     availables = (
         db.query(Collar)
-        .filter(Collar.estado_collar_id == available_id, ~Collar.id.in_(assigned))
+        .filter(Collar.estado_collar_id == get_estado_id("disponible", db), ~Collar.id.in_(assigned))
         .all()
     )
     return [
         {
             "id": a.id,
             "codigo": a.codigo,
-            "estado": get_estado_id(a.estado_collar_id, db),
+            "estado": get_estado_nombre(a.estado_collar_id, db),
             "bateria": a.bateria,
             "ultima_actividad": (
                 a.ultima_actividad.isoformat() if a.ultima_actividad else None
@@ -133,7 +132,7 @@ def list_collares(
         )
     return result
 
-@router.post("/", response_model=List[Dict], status_code=201)
+@router.post("/", response_model=Dict, status_code=201)
 def create_collar(
     data: CollarCreate,
     db: Session = Depends(get_db),
@@ -168,11 +167,8 @@ def create_collar(
         start_sequence_from = last_sequence_number + 1
         end_sequence_at = start_sequence_from + cantidad - 1
 
-        new_collars = []
         for i in range(start_sequence_from, end_sequence_at + 1):
-            # Reutiliza la función auxiliar para crear el collar
-            new_collar_obj = create_new_collar_logic(f"{codigo}-{i}", db)
-            new_collars.append(new_collar_obj)
+            create_new_collar_logic(f"{codigo}-{i}", db)
 
         db.commit()
         return {
@@ -204,6 +200,8 @@ def get_collar(
         .first()
     )
     animal = db.get(Animal, asignacion.animal_id) if asignacion else None
+    print(animal.nombre)
+    print(animal)
     return {
         "id": collar.id,
         "codigo": collar.codigo,
@@ -213,8 +211,7 @@ def get_collar(
             collar.ultima_actividad.isoformat() if collar.ultima_actividad else None
         ),
         "animal_id": asignacion.animal_id if asignacion else None,
-        "animal_nombre": animal["nombre"] if animal else None,
-        "animal_info": animal,
+        "animal_nombre": animal.nombre if animal else None,
     }
 
 
@@ -232,7 +229,8 @@ def update_collar(
     changed = False
 
     if data.estado is not None:
-        collar.estado_collar_id = get_estado_nombre(data.estado, db)
+        get_estado_nombre(data.estado, db)
+        collar.estado_collar_id = data.estado
         changed = True
 
     if changed or (
@@ -272,6 +270,15 @@ def delete_collar(
         raise HTTPException(status_code=404, detail="Collar no encontrado")
 
     try:
+        asignacion = (
+            db.query(AsignacionCollar)
+            .filter_by(collar_id=collar.id, fecha_fin=None)
+            .first()
+        )
+        if asignacion:
+            asignacion.fecha_fin = datetime.utcnow()
+            db.add(asignacion)
+
         db.delete(collar)
         db.commit()
         return {
@@ -302,32 +309,27 @@ def handle_assign_collar(
         raise HTTPException(status_code=404, detail="Collar no encontrado")
 
     try:
-        if data.animal_id:
-            asignacion_actual = (
-                db.query(AsignacionCollar)
-                .filter_by(collar_id=collar_id, fecha_fin=None)
-                .first()
-            )
-            if asignacion_actual:
-                asignacion_actual.fecha_fin = datetime.utcnow()
+        animal_obj = None
+        if data.animal_id is not None:
+            animal_obj = db.get(Animal, data.animal_id)
+            if not animal_obj:
+                raise HTTPException(status_code=404, detail="Animal no encontrado")
+            if animal_obj.parcela and animal_obj.parcela.campo.usuario_id != current_user.id:
+                raise HTTPException(status_code=403, detail="No autorizado para asignar este animal")
 
-            if data.animal_id:
-                animal_obj = db.query(Animal).get(data.animal_id)
-                if not animal_obj:
-                    HTTPException(status_code=404, detal="Animal no encontrado.")
+        assign_collar(collar, animal_obj, current_user.id, db)
+        db.commit()
 
-                if animal_obj.parcela and animal_obj.parcela.campo.usuario_id != current_user.id:
-                    HTTPException(status_code=403, detal="No autorizado para asignar este animal.")
-                
-                assign_collar(collar, animal_obj, current_user.id, db)
-                db.commit()
-
-                if animal_obj:
-                    return {"status": "success", "message": f"Collar {collar.codigo} asignado a {animal_obj.nombre}."}, 200
-                else:
-                    return {"status": "success", "message": f"Collar {collar.codigo} desasignado correctamente."}, 200
-
-        return {"status": "ok"}
+        if animal_obj:
+            return {
+                "status": "success",
+                "message": f"Collar {collar.codigo} asignado a {animal_obj.nombre}.",
+            }
+        else:
+            return {
+                "status": "success",
+                "message": f"Collar {collar.codigo} desasignado correctamente.",
+            }
 
     except Exception as e:
         db.rollback()

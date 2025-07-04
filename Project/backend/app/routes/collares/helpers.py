@@ -7,30 +7,36 @@ from backend.app.models import (
     AsignacionCollar,
     EstadoCollar,
 )
-from backend.app.models.collar import Collar
+from backend.app.models import Collar, AsignacionCollar, EstadoCollar
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def get_estado_id(nombre: str, db: Session = Depends(get_db)) -> int:
-    estado = db.query(EstadoCollar).filter(EstadoCollar.nombre.ilike(nombre)).first()
+    estado = (
+        db.query(EstadoCollar)
+        .filter(EstadoCollar.nombre.ilike(nombre))
+        .first()
+    )
     if not estado:
         raise HTTPException(500, f"Estado '{nombre}' no encontrado")
     return estado.id
 
 
-def get_estado_nombre(id: str, db: Session = Depends(get_db)) -> int:
-    estado = db.query(EstadoCollar).filter(EstadoCollar.id).first()
+def get_estado_nombre(estado_id: int, db: Session = Depends(get_db)) -> str:
+    """Return state name by id, raising 500 if not found."""
+    estado = db.query(EstadoCollar).filter(EstadoCollar.id == estado_id).first()
     if not estado:
-        raise HTTPException(500, f"Estado '{id}' no encontrado")
-    return estado.id
+        raise HTTPException(500, f"Estado '{estado_id}' no encontrado")
+    return estado.nombre
 
 def create_new_collar_logic(codigo, db: Session = Depends(get_db)):
     """Crea un nuevo collar con estado 'disponible' y batería 100%."""
+    estado_disponible = get_estado_id("disponible", db)
     new_collar = Collar(
         codigo=codigo,
-        estado_collar_id=2,
+        estado_collar_id=estado_disponible,
         bateria=100.0,
         ultima_actividad=datetime.now(),
     )
@@ -44,14 +50,15 @@ def end_active_assignment(assignment, db: Session = Depends(get_db)):
         assignment.fecha_fin = datetime.now()
         db.add(assignment)
 
-        old_collar = db.query(Collar).get(assignment.collar_id)
+        old_collar = db.get(Collar, assignment.collar_id)
         if old_collar and old_collar.estado_collar_id not in [get_estado_id("sin bateria"), get_estado_id("defectuoso")]:
             old_collar.estado_collar_id = get_estado_id("disponible")
             db.add(old_collar)
     
 def create_new_assignment_logic(collar_id, animal_id, usuario_id, db: Session = Depends(get_db)):
     """Crea una nueva asignación de collar y pone el collar en estado 'activo'."""
-    if not "activo":
+    estado_activo = get_estado_id("activo", db)
+    if estado_activo is None:
         raise ValueError("Estado 'activo' no configurado en la base de datos.")
 
     new_assignment = AsignacionCollar(
@@ -63,9 +70,9 @@ def create_new_assignment_logic(collar_id, animal_id, usuario_id, db: Session = 
     )
     db.add(new_assignment)
 
-    collar = db.query(Collar).get(collar_id)
-    if collar and collar.estado_collar_id != get_estado_id("activo"):
-        collar.estado_collar_id = get_estado_id("activo")
+    collar = db.get(Collar, collar_id)
+    if collar and collar.estado_collar_id != estado_activo:
+        collar.estado_collar_id = estado_activo
         db.add(collar)
     return new_assignment
 
@@ -78,7 +85,7 @@ def assign_collar(collar, animal_to_assign, current_user_id, db: Session = Depen
     current_collar_assignment = db.query(AsignacionCollar).filter_by(
         collar_id=collar.id, fecha_fin=None
     ).first()
-    end_active_assignment(current_collar_assignment)
+    end_active_assignment(current_collar_assignment, db)
 
     # 2. Si hay un animal_to_assign, asignarlo
     if animal_to_assign:
@@ -86,10 +93,12 @@ def assign_collar(collar, animal_to_assign, current_user_id, db: Session = Depen
         existing_animal_assignment = db.query(AsignacionCollar).filter_by(
             animal_id=animal_to_assign.id, fecha_fin=None
         ).first()
-        end_active_assignment(existing_animal_assignment)
+        end_active_assignment(existing_animal_assignment, db)
 
         # Crear la nueva asignación
-        create_new_assignment_logic(collar.id, animal_to_assign.id, current_user_id)
+        create_new_assignment_logic(
+            collar.id, animal_to_assign.id, current_user_id, db
+        )
     else: # Si animal_to_assign es None, el collar queda desasignado y pasa a disponible
         if collar.estado_collar_id not in [get_estado_id("sin bateria"), get_estado_id("defectuoso")]:
             collar.estado_collar_id = get_estado_id("disponible")
