@@ -9,7 +9,7 @@ import { click } from 'ol/events/condition'
 import { toLonLat } from 'ol/proj'
 import Overlay from 'ol/Overlay'
 import { getArea as getGeodesicArea } from 'ol/sphere'
-import { PARCELA_STYLES } from '../../constants/styles'
+import { PARCELA_STYLES } from '@/constants/styles'
 
 export function useChangeTool(mapRef, { setMode }, onUpdate = () => { }) {
     const editableLayer = useRef(null)

@@ -1,16 +1,15 @@
 // ~/Project/frontend/src/views/MapView.jsx
 import { useEffect, useContext, useState, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { fromLonLat } from '../../api/services/mapService';
-import { ModalInfo } from '../../components/common/Modals';
-import { useMapParcelas } from '../../hooks/useMapParcelas';
-import useViewCleanup from '../../hooks/useViewCleanup';
-import { MapContext } from '../../context/MapContext';
-import { CampoContext } from '../../context/CampoContext';
+import { ModalInfo } from '@/components/common/Modals';
+import { useMapParcelas } from '@/hooks/useMapParcelas';
+import useViewCleanup from '@/hooks/useViewCleanup';
+import { MapContext } from '@/context/MapContext';
+import { CampoContext } from '@/context/CampoContext';
 import { easeOut } from 'ol/easing';
 import ClusterLayer from '@/components/cluster/ClusterLayer';
 import { useAnimalDataStream } from '@/hooks/useAnimalDataStream';
-import { fetchParcelaInit } from '@/api/services/parcelaService';
+import { fromLonLat, fetchMapFeatures } from '@/api/services/mapService';
 import SearchAnimal from '@/components/ui/MapOverlays/SearchAnimal';
 
 export default function MapView() {
@@ -46,7 +45,7 @@ export default function MapView() {
     useViewCleanup(() => clearParcelas());
 
     useEffect(() => {
-        fetchParcelaInit()
+        fetchMapFeatures()
             .then(data => setParcelasGeo(data.parcelas))
             .catch(err => console.error('Error al cargar parcelas:', err));
     }, []);

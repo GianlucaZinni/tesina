@@ -1,16 +1,12 @@
-from typing import List, Optional, Dict
-from datetime import datetime, date
-import json
+from typing import List, Dict
+from datetime import datetime
 
-from shapely.geometry import shape, Point
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from pydantic import BaseModel
 
 from backend.app.db import get_db
 from backend.app.models import (
-    Animal,
     Parcela,
     Collar,
     Temperatura,
@@ -22,75 +18,14 @@ from backend.app.models import (
     Sexo,
     EstadoReproductivo,
     EstadoCollar,
+    Usuario
 )
-from backend.app.models.usuario import Usuario
+from backend.app.models.animal import Animal, AnimalCreate, AnimalUpdate, AnimalOut
 from backend.app.login_manager import get_current_user
-from backend.app.routes.collares.endpoints import _get_estado_id
+from backend.app.routes.collares.helpers import get_estado_id
+from .helpers import is_animal_outside
 
 router = APIRouter(prefix="/api/animals")
-
-
-class AnimalCreate(BaseModel):
-    nombre: str
-    numero_identificacion: Optional[str] = None
-    fecha_nacimiento: Optional[date] = None
-    peso: Optional[float] = None
-    altura_cruz: Optional[float] = None
-    longitud_tronco: Optional[float] = None
-    perimetro_toracico: Optional[float] = None
-    ancho_grupa: Optional[float] = None
-    longitud_grupa: Optional[float] = None
-    estado_reproductivo_id: Optional[int] = None
-    numero_partos: Optional[int] = None
-    intervalo_partos: Optional[int] = None
-    fertilidad: Optional[float] = None
-    ubicacion_sensor: Optional[str] = None
-    parcela_id: Optional[int] = None
-    raza_id: Optional[int] = None
-    sexo_id: Optional[int] = None
-
-
-class AnimalUpdate(AnimalCreate):
-    nombre: Optional[str] = None
-
-
-class AnimalOut(BaseModel):
-    id: int
-    nombre: str
-    numero_identificacion: Optional[str] = None
-    fecha_nacimiento: Optional[date] = None
-    peso: Optional[float] = None
-    altura_cruz: Optional[float] = None
-    longitud_tronco: Optional[float] = None
-    perimetro_toracico: Optional[float] = None
-    ancho_grupa: Optional[float] = None
-    longitud_grupa: Optional[float] = None
-    estado_reproductivo_id: Optional[int] = None
-    numero_partos: Optional[int] = None
-    intervalo_partos: Optional[int] = None
-    fertilidad: Optional[float] = None
-    ubicacion_sensor: Optional[str] = None
-    parcela_id: Optional[int] = None
-    raza_id: Optional[int] = None
-    sexo_id: Optional[int] = None
-
-    class Config:
-        orm_mode = True
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def is_animal_outside(animal: Animal, lon: float, lat: float) -> bool:
-    try:
-        if not animal.parcela or not animal.parcela.perimetro_geojson:
-            return False
-        poly = shape(json.loads(animal.parcela.perimetro_geojson)["geometry"])
-        point = Point(lon, lat)
-        return not poly.contains(point)
-    except Exception:
-        return False
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +80,7 @@ def list_animals(
         UbicacionActual.lon,
         UbicacionActual.timestamp,
     ).all()
+
     ubicacion_dict = {
         u.animal_id: {
             "lat": u.lat,
@@ -154,16 +90,18 @@ def list_animals(
         for u in ubicaciones
     }
 
-    subq = (
+    subquery_temp = (
         db.query(Temperatura.collar_id, func.max(Temperatura.timestamp).label("max_ts"))
         .group_by(Temperatura.collar_id)
         .subquery()
     )
+
     temp_rows = (
         db.query(Temperatura.collar_id, Temperatura.timestamp, Temperatura.corporal)
-        .join(subq, (Temperatura.collar_id == subq.c.collar_id) & (Temperatura.timestamp == subq.c.max_ts))
+        .join(subquery_temp, (Temperatura.collar_id == subquery_temp.c.collar_id) & (Temperatura.timestamp == subquery_temp.c.max_ts))
         .all()
     )
+
     temp_dict = {
         r.collar_id: {
             "corporal": r.corporal,
@@ -176,9 +114,11 @@ def list_animals(
     for animal in animales:
         collar_data = collares_dict.get(animal.id)
         ubic = ubicacion_dict.get(animal.id)
-        temp = None
-        if collar_data and collar_data.get("collar_id"):
-            temp = temp_dict.get(collar_data["collar_id"])
+        temp = (
+            temp_dict.get(collar_data["collar_id"])
+            if collar_data and collar_data.get("collar_id")
+            else None
+        )
 
         result.append(
             {
@@ -520,7 +460,7 @@ def create_animal(
 
     nuevo = Animal(
         nombre=nombre,
-        numero_identificacion=data.numero_identificacion or "ID-x",
+        numero_identificacion="ID-x",
         raza_id=raza_id,
         sexo_id=sexo_id,
         fecha_nacimiento=data.fecha_nacimiento,
@@ -540,7 +480,7 @@ def create_animal(
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
-    return {"status": "ok", "message": "Animal creado correctamente", "animal_id": nuevo.id}
+    return {"status": "ok", "message": "Animal creado correctamente"}
 
 
 # ---------------------------------------------------------------------------
@@ -604,7 +544,7 @@ def delete_animal(
     if asignacion:
         asignacion.fecha_fin = datetime.utcnow()
         collar = db.get(Collar, asignacion.collar_id)
-        disponible_id = _get_estado_id(db, "disponible")
+        disponible_id = get_estado_id("disponible", db)
         if collar:
             collar.estado_collar_id = disponible_id
             db.add(collar)

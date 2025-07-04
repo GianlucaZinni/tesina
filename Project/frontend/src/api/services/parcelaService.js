@@ -1,12 +1,6 @@
 // ~/Project/frontend/src/api/services/parcelaService.js
 import { apiFetch } from '../apiClient';
 
-export async function fetchParcelaInit() {
-    const res = await apiFetch('/api/parcelas/init')
-    if (!res.ok) throw new Error('Error al cargar datos')
-    return await res.json()
-}
-
 export async function getResumenParcelas() {
     const res = await apiFetch('/api/parcelas/animales/resumen');
     if (!res.ok) throw new Error('Error al cargar resumen de parcelas')

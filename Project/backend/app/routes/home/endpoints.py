@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from backend.app.security import admin_required
+from backend.app.security import admin_required, owner_required
 
 
 BASE_DIR = Path(__file__).resolve().parents[4]
@@ -43,7 +43,6 @@ async def spa_routes(path: str, request: Request) -> HTMLResponse:
 @router.get("/mapa", response_class=HTMLResponse)
 @router.get("/parcelas", response_class=HTMLResponse)
 @router.get("/campos", response_class=HTMLResponse)
-@router.get("/collares", response_class=HTMLResponse)
 @router.get("/alertas", response_class=HTMLResponse)
 @router.get("/animales", response_class=HTMLResponse)
 async def render_react_app(request: Request) -> HTMLResponse:
@@ -51,10 +50,3 @@ async def render_react_app(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         "index.html", {"request": request, "js_file": js_file, "css_file": css_file}
     )
-
-
-@router.get("/home", response_class=HTMLResponse)
-async def home_route(
-    request: Request, user=Depends(admin_required)
-) -> HTMLResponse:
-    return templates.TemplateResponse("base/home.html", {"request": request})

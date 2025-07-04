@@ -17,6 +17,14 @@ import View from 'ol/View';
 import { createXYZ } from 'ol/tilegrid';
 
 
+import { apiFetch } from '../apiClient';
+
+export async function fetchMapFeatures() {
+    const res = await apiFetch('/api/map/')
+    if (!res.ok) throw new Error('Error al cargar datos')
+    return await res.json()
+}
+
 // VectorLayers dinámicos usados para limpiar el mapa
 const vectorLayers = []
 

@@ -1,7 +1,7 @@
 // ~/Project/frontend/src/components/ui/MapControls/CampoSelector.jsx
 import { useEffect } from 'react';
 import { ChevronDown, MapPin } from 'lucide-react';
-import { fromLonLat } from '../../../api/services/mapService';
+import { fromLonLat } from '@/api/services/mapService';
 import { easeOut } from 'ol/easing';
 
 export default function CampoSelector({

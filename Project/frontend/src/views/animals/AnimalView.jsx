@@ -20,7 +20,7 @@ import {
     fetchCollaresDisponibles,
     fetchCollarStates
 } from '@/api/services/collarService';
-import { fetchParcelaInit } from '@/api/services/parcelaService';
+import { fetchMapFeatures } from '@/api/services/mapService';
 
 // Componentes de la aplicación
 import AnimalForm from '@/components/ui/Forms/AnimalForm';
@@ -163,7 +163,7 @@ export default function AnimalView() {
             const [animalesRes, collaresRes, parcelasRes, opcionesRes, collarStatesRes] = await Promise.all([
                 fetchAnimalesInit(),
                 fetchCollaresInit(),
-                fetchParcelaInit(),
+                fetchMapFeatures(),
                 fetchAnimalesOptions(),
                 fetchCollarStates(),
             ]);
@@ -220,7 +220,11 @@ export default function AnimalView() {
     }, []);
 
     useEffect(() => {
-        cargarDatos();
+        const token = localStorage.getItem('token');
+        console.log(token)
+        if (token) {
+            cargarDatos();
+        }
     }, [cargarDatos]);
 
     // --- Manejo de Animales ---

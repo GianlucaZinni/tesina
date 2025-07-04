@@ -1,7 +1,7 @@
 // ~/Project/frontend/src/views/users/LoginView.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { CircleUserRound, LockKeyhole } from 'lucide-react';
 
 export default function LoginView() {

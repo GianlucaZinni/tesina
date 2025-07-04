@@ -8,7 +8,7 @@ import { getArea as getGeodesicArea } from 'ol/sphere'
 import Overlay from 'ol/Overlay'
 
 import { polygonGlobals } from './general'
-import { PARCELA_STYLES } from '../../constants/styles'
+import { PARCELA_STYLES } from '@/constants/styles'
 
 export function useDrawTool(mapRef, { setMode, setArea, setTooltipText }) {
     const drawingPoints = useRef([])

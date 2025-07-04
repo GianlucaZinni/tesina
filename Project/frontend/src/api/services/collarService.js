@@ -9,6 +9,15 @@ export async function fetchCollaresInit() {
     return await res.json()
 }
 
+export async function fetchCollarStates() {
+    const res = await apiFetch('/api/collares/states');
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al obtener los estados de collar.');
+    }
+    return await res.json();
+}
+
 export async function fetchCollaresDisponibles() {
     const res = await apiFetch('/api/collares/available')
     if (!res.ok) {
@@ -38,6 +47,7 @@ export const createCollarBatch = async (data) => {
         },
         body: JSON.stringify(data),
     });
+    console.log(response)
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al crear collares en lote.');
@@ -85,15 +95,6 @@ export const handleCollarAssignment = async (collarId, animalId) => { // animalI
     }
     return response.json();
 };
-
-export async function fetchCollarStates() {
-    const res = await apiFetch('/api/collares/estados');
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al obtener los estados de collar.');
-    }
-    return await res.json();
-}
 
 export async function downloadCollarTemplate() {
     const res = await apiFetch('/api/collares/export/template');

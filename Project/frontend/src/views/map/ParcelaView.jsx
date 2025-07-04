@@ -3,8 +3,8 @@
 import { useEffect, useState, useContext } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
-import { createParcela, updateParcela, deleteParcela, fetchParcelaInit, getResumenParcelas } from '@/api/services/parcelaService';
-import { fromLonLat } from '@/api/services/mapService';
+import { createParcela, updateParcela, deleteParcela, getResumenParcelas } from '@/api/services/parcelaService';
+import { fromLonLat, fetchMapFeatures } from '@/api/services/mapService';
 
 import DrawToolPanel from '@/components/ui/MapControls/DrawToolPanel';
 import { FormularioParcela } from '@/components/ui/Forms/FormsMap';
@@ -184,7 +184,7 @@ export default function ParcelaView() {
                 });
             }
 
-            const data = await fetchParcelaInit();
+            const data = await fetchMapFeatures();
             setParcelas(data.parcelas);
             setFormData(prev => ({ ...prev, parcela_id: '', nombre: '', descripcion: '' }));
             resetHerramientas();
@@ -206,7 +206,7 @@ export default function ParcelaView() {
         setPopupResumenOpen(false)
         try {
             await deleteParcela(formData.parcela_id);
-            const data = await fetchParcelaInit();
+            const data = await fetchMapFeatures();
             setParcelas(data.parcelas);
             setFormData(prev => ({ ...prev, parcela_id: '', nombre: '', descripcion: '' }));
             setAreaParcela(0);

@@ -1,8 +1,6 @@
-from typing import List, Optional
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -10,90 +8,17 @@ from backend.app.db import get_db
 from backend.app.login_manager import get_current_user
 from backend.app.models import (
     Campo,
-    Parcela,
     Animal,
     AsignacionCollar,
     Tipo,
     Raza,
     Sexo,
 )
+from backend.app.models.parcela import Parcela, ParcelaCreate, ParcelaUpdate
 from backend.app.models.usuario import Usuario
 
 
 router = APIRouter(prefix="/api/parcelas")
-
-
-class ParcelaCreate(BaseModel):
-    campo_id: int
-    nombre: str
-    descripcion: Optional[str] = None
-    area: Optional[float] = None
-    perimetro_geojson: dict
-
-
-class ParcelaUpdate(BaseModel):
-    geojson: dict
-    nombre: Optional[str] = None
-    descripcion: Optional[str] = None
-    area: Optional[float] = None
-
-# --------------------------
-# . Parcelas y campos (para mapa)
-# --------------------------
-@router.get("/init")
-def api_parcela_init(
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-):
-    campos_usuario = db.query(Campo).filter_by(usuario_id=current_user.id).all()
-
-    campos_data = {
-        c.id: {
-            "lat": c.lat,
-            "lon": c.lon,
-            "nombre": c.nombre,
-            "descripcion": c.descripcion,
-            "is_preferred": c.is_preferred  # <-- lo incluimos directamente en el dict
-        }
-        for c in campos_usuario if c.lat and c.lon
-    }
-
-    parcelas_data = {}
-    for parcela in db.query(Parcela).filter(Parcela.campo_id.in_([c.id for c in campos_usuario])).all():
-        try:
-            geojson = json.loads(parcela.perimetro_geojson)
-            geojson["id"] = parcela.id
-            geojson["nombre"] = parcela.nombre
-            geojson["descripcion"] = parcela.descripcion
-            geojson["area"] = parcela.area
-
-            campo_id = parcela.campo_id
-            parcelas_data.setdefault(campo_id, []).append(geojson)
-        except Exception:
-            continue
-
-    # Buscar campo preferido explícitamente
-    campo_preferido = next((c for c in campos_usuario if c.is_preferred), None)
-
-    if campo_preferido:
-        center_lat = campo_preferido.lat
-        center_lon = campo_preferido.lon
-        campo_preferido_id = campo_preferido.id
-    elif campos_usuario:
-        center_lat = campos_usuario[0].lat
-        center_lon = campos_usuario[0].lon
-        campo_preferido_id = campos_usuario[0].id
-    else:
-        center_lat = -38.0
-        center_lon = -63.0
-        campo_preferido_id = None
-
-    return {
-        "campos": campos_data,
-        "parcelas": parcelas_data,
-        "center": {"lat": center_lat, "lon": center_lon},
-        "campo_preferido_id": campo_preferido_id,
-    }
 
 # --------------------------
 # . Animales por parcela
@@ -101,7 +26,6 @@ def api_parcela_init(
 @router.get("/animales/resumen")
 def api_parcela_animals(
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
 ):
     # 1. Totales de animales y collares activos por parcela con nombre
     resumen_base = (
@@ -217,14 +141,10 @@ def api_update_parcela(
     if not data.geojson:
         raise HTTPException(status_code=400, detail="GeoJSON faltante")
 
-    parcela.perimetro_geojson = json.dumps(data.geojson)
-    parcela.area = data.area
-
-    if data.nombre:
-        parcela.nombre = data.nombre
-
-    if data.descripcion:
-        parcela.descripcion = data.descripcion
+    parcela.perimetro_geojson = json.dumps(data.geojson) if data.geojson else parcela.perimetro_geojson
+    parcela.area = data.area if data.area else parcela.area
+    parcela.nombre = data.nombre if data.nombre else parcela.nombre
+    parcela.descripcion = data.descripcion if data.descripcion else parcela.descripcion
 
     db.commit()
     return {"status": "ok", "message": "Parcela actualizada correctamente"}

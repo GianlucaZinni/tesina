@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-
 from backend.app.db import Base
+from pydantic import BaseModel
 
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -13,9 +13,14 @@ class Usuario(Base):
     id_tipousuario = Column(Integer, ForeignKey("tipos_usuarios.id_tipousuario"))
 
     tipousuario = relationship("TipoUsuario")
-    campos = relationship('Campo', backref='usuario', lazy=True)
+    campos = relationship("Campo", backref="usuario", lazy=True)
     asignaciones_realizadas = relationship(
         "AsignacionCollar",
         backref="usuario_asignador",
         lazy=True,
     )
+
+
+class LoginForm(BaseModel):
+    username: str
+    password: str

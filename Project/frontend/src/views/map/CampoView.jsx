@@ -3,19 +3,18 @@
 import { useEffect, useState, useContext } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
-import { createCampo, updateCampo, deleteCampo } from '../../api/services/campoService';
-import { fetchParcelaInit } from '../../api/services/parcelaService';
-import { fromLonLat } from '../../api/services/mapService';
+import { createCampo, updateCampo, deleteCampo } from '@/api/services/campoService';
+import { fromLonLat, fetchMapFeatures } from '@/api/services/mapService';
 
-import { FormularioCampo } from '../../components/ui/Forms/FormsMap';
-import { ModalGenerico, ModalInfo } from '../../components/common/Modals';
+import { FormularioCampo } from '@/components/ui/Forms/FormsMap';
+import { ModalGenerico, ModalInfo } from '@/components/common/Modals';
 
-import { useMarkerGps } from '../../hooks/useMarkerGps';
-import { useMapParcelas } from '../../hooks/useMapParcelas';
-import useViewCleanup from '../../hooks/useViewCleanup';
+import { useMarkerGps } from '@/hooks/useMarkerGps';
+import { useMapParcelas } from '@/hooks/useMapParcelas';
+import useViewCleanup from '@/hooks/useViewCleanup';
 
-import { MapContext } from '../../context/MapContext';
-import { CampoContext } from '../../context/CampoContext';
+import { MapContext } from '@/context/MapContext';
+import { CampoContext } from '@/context/CampoContext';
 
 import { Save, MapPinPlus, MapPinX } from 'lucide-react';
 
@@ -148,7 +147,7 @@ export default function CampoView() {
                 await createCampo({ nombre, descripcion, lat, lon });
             }
 
-            const data = await fetchParcelaInit();
+            const data = await fetchMapFeatures();
             setCampos(data.campos);
             setParcelas(data.parcelas);
 
@@ -192,7 +191,7 @@ export default function CampoView() {
 
         try {
             await deleteCampo(formCampo.campo_id);
-            const data = await fetchParcelaInit();
+            const data = await fetchMapFeatures();
             setCampos(data.campos);
             setParcelas(data.parcelas);
             setFormCampo({ campo_id: '', nombre: '', descripcion: '', lat: '', lon: '' });

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash
 
@@ -8,28 +7,21 @@ from backend.app.login_manager import (
     create_access_token,
     get_current_user,
 )
-from backend.app.models import Usuario
+from backend.app.models.usuario import Usuario, LoginForm
 
 
 router = APIRouter(prefix="/api/user")
-
-
-class LoginForm(BaseModel):
-    username: str
-    password: str
 
 
 @router.post("/login")
 def login(form: LoginForm, db: Session = Depends(get_db)):
 
     user = db.query(Usuario).filter_by(username=form.username).first()
-    print(user)
     # if not user or not check_password_hash(user.password, form.password):
     #     raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     if not user or not user.password == form.password:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
-
 
     token = create_access_token({"sub": str(user.id)})
     return {

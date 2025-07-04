@@ -1,12 +1,11 @@
 // ~/Project/frontend/src/layouts/MapLayout.jsx
 import { Outlet } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
-import LateralButtons from '../components/ui/MapControls/LateralButtons';
-import CampoSelector from '../components/ui/MapControls/CampoSelector';
-import { MapContext } from '../context/MapContext';
-import { CampoContext } from '../context/CampoContext';
-import { fetchParcelaInit } from '../api/services/parcelaService';
-import { fromLonLat, createBaseMap } from '../api/services/mapService';
+import LateralButtons from '@/components/ui/MapControls/LateralButtons';
+import CampoSelector from '@/components/ui/MapControls/CampoSelector';
+import { MapContext } from '@/context/MapContext';
+import { CampoContext } from '@/context/CampoContext';
+import { fromLonLat, createBaseMap, fetchMapFeatures } from '@/api/services/mapService';
 import { easeOut } from 'ol/easing';
 
 export default function MapLayout() {
@@ -22,7 +21,7 @@ export default function MapLayout() {
 
     useEffect(() => {
         async function init() {
-            const data = await fetchParcelaInit();
+            const data = await fetchMapFeatures();
             setCampos(data.campos);
             setParcelas(data.parcelas);
             const defaultCampo = data.campo_preferido_id || Object.keys(data.campos)[0];

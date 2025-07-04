@@ -3,9 +3,9 @@ import { useEffect, useRef } from 'react'
 import GeoJSON from 'ol/format/GeoJSON'
 import VectorSource from 'ol/source/Vector'
 import VectorLayer from 'ol/layer/Vector'
-import { polygonGlobals } from '../hooks/polygonTools/general';
-import { calculatePolygonAreaFromGeometry } from '../utils/geometry'
-import { PARCELA_STYLES } from '../constants/styles'
+import { polygonGlobals } from '@/hooks/polygonTools/general';
+import { calculatePolygonAreaFromGeometry } from '@/utils/geometry'
+import { PARCELA_STYLES } from '@/constants/styles'
 
 export function useMapParcelas({
     mapRef,

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, LogOut } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Header({ menuOpen, setMenuOpen }) {
     const location = useLocation();

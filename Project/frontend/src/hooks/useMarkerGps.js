@@ -2,8 +2,8 @@
 import { toLonLat, fromLonLat } from 'ol/proj';
 import { useRef } from 'react';
 
-import { createMapMarker } from '../utils/mapIcon';
-import { crearRipple } from '../effects/ripple';
+import { createMapMarker } from '@/utils/mapIcon';
+import { crearRipple } from '@/effects/ripple';
 
 
 export function useMarkerGps(mapRef) {
