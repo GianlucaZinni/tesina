@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-
+templates.env.globals["get_flashed_messages"] = lambda *args, **kwargs: []
 
 def register_error_handlers(app: FastAPI) -> None:
     """Register custom HTML error pages."""

@@ -21,9 +21,15 @@ class LoginForm(BaseModel):
 
 @router.post("/login")
 def login(form: LoginForm, db: Session = Depends(get_db)):
+
     user = db.query(Usuario).filter_by(username=form.username).first()
-    if not user or not check_password_hash(user.password, form.password):
+    print(user)
+    # if not user or not check_password_hash(user.password, form.password):
+    #     raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+    if not user or not user.password == form.password:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
 
     token = create_access_token({"sub": str(user.id)})
     return {

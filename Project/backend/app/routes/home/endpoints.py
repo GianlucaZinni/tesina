@@ -10,6 +10,7 @@ from backend.app.security import admin_required
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates.env.globals["get_flashed_messages"] = lambda *args, **kwargs: []
 
 router = APIRouter()
 
