@@ -59,7 +59,7 @@ def api_parcela_init(
     }
 
     parcelas_data = {}
-    for parcela in Parcela.query.filter(Parcela.campo_id.in_([c.id for c in campos_usuario])).all():
+    for parcela in db.query(Parcela).filter(Parcela.campo_id.in_([c.id for c in campos_usuario])).all():
         try:
             geojson = json.loads(parcela.perimetro_geojson)
             geojson["id"] = parcela.id

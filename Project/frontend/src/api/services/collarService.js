@@ -1,7 +1,7 @@
-// ~/Project/frontend/src/api/services/collarService.js
+import { apiFetch } from '../apiClient';
 
 export async function fetchCollaresInit() {
-    const res = await fetch('/api/collares/')
+    const res = await apiFetch('/api/collares/')
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Error al obtener todos los collares.');
@@ -10,7 +10,7 @@ export async function fetchCollaresInit() {
 }
 
 export async function fetchCollaresDisponibles() {
-    const res = await fetch('/api/collares/available')
+    const res = await apiFetch('/api/collares/available')
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Error al obtener los collares disponibles.');
@@ -19,7 +19,7 @@ export async function fetchCollaresDisponibles() {
 }
 
 export async function deleteCollar(collarId) {
-    const res = await fetch(`/api/collares/${collarId}`, {
+    const res = await apiFetch(`/api/collares/${collarId}`, {
         method: 'DELETE'
     })
     if (!res.ok) {
@@ -30,7 +30,7 @@ export async function deleteCollar(collarId) {
 }
 
 export const createCollarBatch = async (data) => {
-    const response = await fetch('/api/collares/', {
+    const response = await apiFetch('/api/collares/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ export const createCollarBatch = async (data) => {
 };
 
 export const updateCollar = async (collarId, data) => {
-    const response = await fetch(`/api/collares/${collarId}`, {
+    const response = await apiFetch(`/api/collares/${collarId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export const updateCollar = async (collarId, data) => {
 };
 
 export const fetchCollarDetails = async (collarId) => {
-    const response = await fetch(`/api/collares/${collarId}`);
+    const response = await apiFetch(`/api/collares/${collarId}`);
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al obtener detalles del collar.');
@@ -71,7 +71,7 @@ export const fetchCollarDetails = async (collarId) => {
 };
 
 export const handleCollarAssignment = async (collarId, animalId) => { // animalId puede ser null
-    const response = await fetch(`/api/collares/${collarId}/assign`, {
+    const response = await apiFetch(`/api/collares/${collarId}/assign`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export const handleCollarAssignment = async (collarId, animalId) => { // animalI
 };
 
 export async function fetchCollarStates() {
-    const res = await fetch('/api/collares/estados');
+    const res = await apiFetch('/api/collares/estados');
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Error al obtener los estados de collar.');
@@ -96,7 +96,7 @@ export async function fetchCollarStates() {
 }
 
 export async function downloadCollarTemplate() {
-    const res = await fetch('/api/collares/export/template');
+    const res = await apiFetch('/api/collares/export/template');
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Error al descargar la plantilla de collares.');
@@ -113,7 +113,7 @@ export async function exportCollares(type, filters = {}) {
         params.append('ids', filters.ids.join(','));
     }
 
-    const res = await fetch(`/api/collares/export?${params.toString()}`);
+    const res = await apiFetch(`/api/collares/export?${params.toString()}`);
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Error al exportar collares.');
@@ -125,7 +125,7 @@ export async function importCollares(file) {
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch('/api/collares/import', {
+    const res = await apiFetch('/api/collares/import', {
         method: 'POST',
         body: formData,
     });

@@ -1,18 +1,20 @@
 // ~/Project/frontend/src/api/services/parcelaService.js
+import { apiFetch } from '../apiClient';
+
 export async function fetchParcelaInit() {
-    const res = await fetch('/api/parcelas/init')
+    const res = await apiFetch('/api/parcelas/init')
     if (!res.ok) throw new Error('Error al cargar datos')
     return await res.json()
 }
 
 export async function getResumenParcelas() {
-    const res = await fetch('/api/parcelas/animales/resumen');
+    const res = await apiFetch('/api/parcelas/animales/resumen');
     if (!res.ok) throw new Error('Error al cargar resumen de parcelas')
     return await res.json()
 };
 
 export async function createParcela(payload) {
-    const res = await fetch('/api/parcelas/create', {
+    const res = await apiFetch('/api/parcelas/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -27,7 +29,7 @@ export async function createParcela(payload) {
 }
 
 export async function updateParcela(id, geojson, nombre = '', descripcion = '', area) {
-    const res = await fetch(`/api/parcelas/${id}/update`, {
+    const res = await apiFetch(`/api/parcelas/${id}/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ geojson, nombre, descripcion, area }),
@@ -42,7 +44,7 @@ export async function updateParcela(id, geojson, nombre = '', descripcion = '', 
 }
 
 export async function deleteParcela(id) {
-    const res = await fetch(`/api/parcelas/${id}/delete`, {
+    const res = await apiFetch(`/api/parcelas/${id}/delete`, {
         method: 'DELETE'
     })
     if (!res.ok) throw new Error('Error al eliminar la parcela')

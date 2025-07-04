@@ -1,6 +1,8 @@
 // ~/Project/frontend/src/api/services/campoService.js
+import { apiFetch } from '../apiClient';
+
 export async function createCampo(payload) {
-    const res = await fetch('/map/api/campos/create', {
+    const res = await apiFetch('/map/api/campos/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -15,7 +17,7 @@ export async function createCampo(payload) {
 }
 
 export async function updateCampo(id, payload) {
-    const res = await fetch(`/map/api/campos/${id}/update`, {
+    const res = await apiFetch(`/map/api/campos/${id}/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -30,7 +32,7 @@ export async function updateCampo(id, payload) {
 }
 
 export async function deleteCampo(id) {
-    const res = await fetch(`/map/api/campos/${id}/delete`, {
+    const res = await apiFetch(`/map/api/campos/${id}/delete`, {
         method: 'DELETE'
     })
     if (!res.ok) throw new Error('Error al eliminar el campo')

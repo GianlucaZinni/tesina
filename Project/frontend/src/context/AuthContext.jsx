@@ -34,12 +34,16 @@ export function AuthProvider({ children }) {
         const data = await loginService(credentials);
         if (data.status === 'ok') {
             setUser(data.user);
+            if (data.access_token) {
+                localStorage.setItem('token', data.access_token);
+            }
         }
         return data;
     };
 
     const logout = async () => {
         await logoutService();
+        localStorage.removeItem('token');
         setUser(null);
     };
 
