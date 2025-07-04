@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from backend.app.db import Base
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Collar(Base):
     __tablename__ = 'collares'
@@ -17,8 +17,11 @@ class Collar(Base):
 
 
 class CollarCreate(BaseModel):
-    codigo: str
+    codigo: str = Field(..., alias="identificador")
     cantidad: int
+
+    class Config:
+        allow_population_by_field_name = True
 
 class CollarUpdate(BaseModel):
     estado: Optional[int] = None

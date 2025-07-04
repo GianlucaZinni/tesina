@@ -199,19 +199,12 @@ def get_collar(
         .filter_by(collar_id=collar.id, fecha_fin=None)
         .first()
     )
-    animal = db.get(Animal, asignacion.animal_id) if asignacion else None
-    print(animal.nombre)
-    print(animal)
     return {
         "id": collar.id,
         "codigo": collar.codigo,
         "estado": get_estado_nombre(collar.estado_collar_id, db),
         "bateria": collar.bateria,
-        "ultima_actividad": (
-            collar.ultima_actividad.isoformat() if collar.ultima_actividad else None
-        ),
         "animal_id": asignacion.animal_id if asignacion else None,
-        "animal_nombre": animal.nombre if animal else None,
     }
 
 
@@ -286,7 +279,7 @@ def delete_collar(
             "message": "Collar eliminado correctamente. Cualquier asignación activa ha sido desvinculada.",
         }
     except Exception as e:
-        db.session.rollback()
+        db.rollback()
         HTTPException(
             status_code=500,
             detail="Error interno del servidor al eliminar collar: " + str(e),

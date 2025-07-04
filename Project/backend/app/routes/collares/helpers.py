@@ -14,6 +14,7 @@ from backend.app.models import Collar, AsignacionCollar, EstadoCollar
 # ---------------------------------------------------------------------------
 
 def get_estado_id(nombre: str, db: Session = Depends(get_db)) -> int:
+    """Return state ID by name, raising 500 if not found."""
     estado = (
         db.query(EstadoCollar)
         .filter(EstadoCollar.nombre.ilike(nombre))
