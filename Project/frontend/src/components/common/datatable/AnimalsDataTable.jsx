@@ -9,6 +9,7 @@ import {
     flexRender,
     getExpandedRowModel,
     getFacetedRowModel,
+    getFacetedUniqueValues,
 } from "@tanstack/react-table";
 import SearchBar from "./SearchBar";
 import ColumnFilter from "./ColumnFilter";
@@ -43,6 +44,8 @@ export default function AnimalsDataTable({
     setSorting,
     pagination,
     setPagination,
+    columnFilters,
+    setColumnFilters,
     columnVisibility,
     setColumnVisibility,
 }) {
@@ -89,6 +92,7 @@ export default function AnimalsDataTable({
             rowSelection,
             sorting,
             pagination,
+            columnFilters,
             columnVisibility,
         },
         onGlobalFilterChange: (value) => {
@@ -99,8 +103,9 @@ export default function AnimalsDataTable({
         onSortingChange: setSorting,
         onPaginationChange: setPagination,
         onColumnVisibilityChange: setColumnVisibility,
-        onColumnFiltersChange: () => {
+        onColumnFiltersChange: newFilters => {
             setPagination(prev => ({ ...prev, pageIndex: 0 }));
+            setColumnFilters(newFilters);
         },
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -108,6 +113,7 @@ export default function AnimalsDataTable({
         getPaginationRowModel: getPaginationRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
         getFacetedRowModel: getFacetedRowModel(),
+        getFacetedUniqueValues: getFacetedUniqueValues(),
         enableRowSelection: true,
         autoResetPageIndex: false,
         meta: {

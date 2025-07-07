@@ -69,6 +69,7 @@ function getInitialTableState() {
             globalFilter: saved?.globalFilter || "",
             sorting: saved?.sorting || [],
             pagination: saved?.pagination || { pageIndex: 0, pageSize: 10 },
+            columnFilters: saved?.columnFilters || [],
             columnVisibility: saved?.columnVisibility || {},
             rowSelection: {},
         };
@@ -77,6 +78,7 @@ function getInitialTableState() {
             globalFilter: "",
             sorting: [],
             pagination: { pageIndex: 0, pageSize: 10 },
+            columnFilters: [],
             columnVisibility: {},
             rowSelection: {},
         };
@@ -132,6 +134,7 @@ export default function AnimalView() {
     const [tableGlobalFilter, setTableGlobalFilter] = useState(getInitialTableState().globalFilter);
     const [tableSorting, setTableSorting] = useState(getInitialTableState().sorting);
     const [tablePagination, setTablePagination] = useState(getInitialTableState().pagination);
+    const [tableColumnFilters, setTableColumnFilters] = useState(getInitialTableState().columnFilters);
     const [tableColumnVisibility, setTableColumnVisibility] = useState(getInitialTableState().columnVisibility);
     const [tableRowSelection, setTableRowSelection] = useState({});
 
@@ -585,9 +588,10 @@ export default function AnimalView() {
             globalFilter: tableGlobalFilter,
             sorting: tableSorting,
             pagination: tablePagination,
+            columnFilters: tableColumnFilters,
             columnVisibility: tableColumnVisibility,
         }));
-    }, [tableGlobalFilter, tableSorting, tablePagination, tableColumnVisibility]);
+    }, [tableGlobalFilter, tableSorting, tablePagination, tableColumnFilters, tableColumnVisibility]);
 
     useEffect(() => {
         sessionStorage.setItem(COLLARS_STORAGE_KEY, JSON.stringify({
@@ -632,6 +636,8 @@ export default function AnimalView() {
                             setSorting={setTableSorting}
                             pagination={tablePagination}
                             setPagination={setTablePagination}
+                            columnFilters={tableColumnFilters}
+                            setColumnFilters={setTableColumnFilters}
                             columnVisibility={tableColumnVisibility}
                             setColumnVisibility={setTableColumnVisibility}
                         />

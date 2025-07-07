@@ -10,13 +10,11 @@ export default function ColumnFilter({ column }) {
 
     if (isSelect) {
         const rawOptions = Array.from(
-            new Set(
-                column.getFacetedRowModel()?.rows
-                    ?.map(row => row.getValue(column.id))
-                    ?.filter(opt => opt !== undefined && opt !== null && opt !== '')
-                    ?.map(opt => String(opt).trim())
-            )
-        ).sort((a, b) => a.localeCompare(b));
+            (column.getFacetedUniqueValues?.() ?? new Map()).keys()
+        )
+            .filter(opt => opt !== undefined && opt !== null && opt !== '')
+            .map(opt => String(opt).trim())
+            .sort((a, b) => a.localeCompare(b));
     
         return (
             <Select
@@ -37,6 +35,7 @@ export default function ColumnFilter({ column }) {
             </Select>
         );
     }
+    
 
     return (
         <Input
