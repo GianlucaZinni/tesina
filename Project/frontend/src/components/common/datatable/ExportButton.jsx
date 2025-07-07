@@ -13,7 +13,7 @@ import { AlertCircle, XCircle } from 'lucide-react';
 
 // Importar servicios de exportación de animales y collares
 import { exportAnimals, downloadAnimalTemplate } from '@/api/services/animalService';
-import { exportCollares, downloadCollarTemplate } from '@/api/services/collarService';
+import { exportCollars, downloadCollarTemplate } from '@/api/services/collarService';
 
 
 export default function ExportButton({ table = null, filename = "data", entityType }) { // Añadido entityType
@@ -53,7 +53,7 @@ export default function ExportButton({ table = null, filename = "data", entityTy
             if (entityType === 'animals') {
                 blob = await exportAnimals(type, filters);
             } else if (entityType === 'collares') {
-                blob = await exportCollares(type, filters);
+                blob = await exportCollars(type, filters);
             } else {
                 throw new Error('Tipo de entidad no soportado para exportación.');
             }

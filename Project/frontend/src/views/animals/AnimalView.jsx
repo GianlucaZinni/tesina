@@ -3,22 +3,24 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 // API Services
 import {
-    fetchAnimalesInit,
-    fetchFichaCompleta,
+    fetchAnimals,
+    fetchCompleteSheet,
     createAnimal,
     updateAnimal,
     deleteAnimal,
+    deleteAnimalsBatch,
     fetchAnimalAcronyms,
-    fetchAnimalesOptions,
+    fetchAnimalsOptions,
 } from '@/api/services/animalService';
 import {
-    fetchCollaresInit,
-    createCollarBatch,
+    fetchCollars,
+    createCollarsBatch,
     deleteCollar,
+    deleteCollarsBatch,
     updateCollar,
     fetchCollarDetails,
     handleCollarAssignment,
-    fetchCollaresDisponibles,
+    fetchCollarsAvailables,
     fetchCollarStates
 } from '@/api/services/collarService';
 import { fetchMapFeatures } from '@/api/services/mapService';
@@ -125,6 +127,8 @@ export default function AnimalView() {
 
     const [modalEliminarAnimal, setModalEliminarAnimal] = useState({ abierto: false, animal: null });
     const [modalEliminarCollar, setModalEliminarCollar] = useState({ abierto: false, collar: null });
+    const [modalEliminarAnimales, setModalEliminarAnimales] = useState({ abierto: false, ids: [] });
+    const [modalEliminarCollares, setModalEliminarCollares] = useState({ abierto: false, ids: [] });
 
     const animalTableRef = useRef(null);
     const collarGridRef = useRef(null);
@@ -165,14 +169,14 @@ export default function AnimalView() {
         }
         try {
             const [animalesRes, collaresRes, parcelasRes, opcionesRes, acronimosRes, collarStatesRes] = await Promise.all([
-                fetchAnimalesInit(),
-                fetchCollaresInit(),
+                fetchAnimals(),
+                fetchCollars(),
                 fetchMapFeatures(),
-                fetchAnimalesOptions(),
+                fetchAnimalsOptions(),
                 fetchAnimalAcronyms(),
                 fetchCollarStates(),
             ]);
-            
+
             const animalIdToCollarMap = new Map();
             collaresRes.forEach(collar => {
                 if (collar.animal_id) {
@@ -242,7 +246,7 @@ export default function AnimalView() {
 
     const handleEditarAnimal = useCallback(async (id) => {
         try {
-            const data = await fetchFichaCompleta(id);
+            const data = await fetchCompleteSheet(id);
             const form = {
                 ...data,
                 parcela_id: data.parcela_id?.toString() || '',
@@ -325,7 +329,7 @@ export default function AnimalView() {
 
     const handleCreateCollarBatch = async (identificadorBase, cantidad) => {
         try {
-            await createCollarBatch({ identificador: identificadorBase, cantidad: cantidad });
+            await createCollarsBatch({ identificador: identificadorBase, cantidad: cantidad });
             toast.success("Collares creados.", {
                 description: `Se han registrado ${cantidad} collares con identificador ${identificadorBase}.`,
                 icon: <CheckCircle className="h-4 w-4 text-green-500" />,
@@ -362,6 +366,53 @@ export default function AnimalView() {
             });
         }
     };
+
+    const handleEliminarAnimalesSeleccionados = async (ids) => {
+        setModalEliminarAnimales({ abierto: true, ids });
+    };
+
+    const handleEliminarAnimalesSeleccionadosConfirm = async () => {
+        try {
+            await deleteAnimalsBatch(modalEliminarAnimales.ids);
+            toast.success("Animales eliminados.", {
+                description: `Se eliminaron ${modalEliminarAnimales.ids.length} animales correctamente.`,
+                icon: <Trash2 className="h-4 w-4 text-red-500" />,
+            });
+            setModalEliminarAnimales({ abierto: false, ids: [] });
+            setTableRowSelection({});
+            await cargarDatos();
+        } catch (error) {
+            console.error("Error al eliminar animales:", error);
+            toast.error("Error al eliminar animales.", {
+                description: error.message || "Ocurrió un problema al eliminar los animales seleccionados.",
+                icon: <XCircle className="h-4 w-4 text-red-500" />,
+            });
+        }
+    };
+
+    const handleEliminarCollaresSeleccionados = async (ids) => {
+        setModalEliminarCollares({ abierto: true, ids });
+    };
+
+    const handleEliminarCollaresSeleccionadosConfirm = async () => {
+        try {
+            await deleteCollarsBatch(modalEliminarCollares.ids);
+            toast.success("Collares eliminados.", {
+                description: `Se eliminaron ${modalEliminarCollares.ids.length} collares correctamente.`,
+                icon: <Trash2 className="h-4 w-4 text-red-500" />,
+            });
+            setModalEliminarCollares({ abierto: false, ids: [] });
+            setCollarRowSelection({});
+            await cargarDatos();
+        } catch (error) {
+            console.error("Error al eliminar collares:", error);
+            toast.error("Error al eliminar collares.", {
+                description: error.message || "Ocurrió un problema al eliminar los collares seleccionados.",
+                icon: <XCircle className="h-4 w-4 text-red-500" />,
+            });
+        }
+    };
+
 
     const openCollarEditModal = useCallback(async (collarId) => {
         try {
@@ -434,7 +485,7 @@ export default function AnimalView() {
 
     const handleOpenAssignCollarModal = useCallback(async (animalId) => {
         try {
-            const disponibles = await fetchCollaresDisponibles();
+            const disponibles = await fetchCollarsAvailables();
             setAvailableCollaresForAssignment(disponibles);
             setSelectedCollarToAssign(null);
             setModalAsignarCollar({ abierto: true, animalId: animalId });
@@ -628,6 +679,7 @@ export default function AnimalView() {
                             onRowClick={(animal) => console.log("Seleccionado:", animal.numero_identificacion)}
                             onEditRow={handleEditarAnimal}
                             onDeleteRow={(animal) => setModalEliminarAnimal({ abierto: true, animal: animal })}
+                            onDeleteSelected={handleEliminarAnimalesSeleccionados}
                             globalFilter={tableGlobalFilter}
                             setGlobalFilter={handleAnimalSearchChange}
                             rowSelection={tableRowSelection}
@@ -660,6 +712,7 @@ export default function AnimalView() {
                             collares={collares}
                             onCreateBatch={handleCreateCollarBatch}
                             onDelete={handleEliminarCollar}
+                            onDeleteSelected={handleEliminarCollaresSeleccionados}
                             onEditCollar={openCollarEditModal}
                             fullCollarDataForExport={collares}
                             collarStatesOptions={collarStatesOptions}
@@ -760,6 +813,47 @@ export default function AnimalView() {
                 }
             />
 
+            {/* Modal para Eliminar Animal */}
+            <ModalGenerico
+                isOpen={modalEliminarAnimal.abierto}
+                title="Confirmar Eliminación de Animal"
+                onConfirm={handleEliminarAnimalConfirm}
+                onCancel={() => setModalEliminarAnimal({ abierto: false, animal: null })}
+                confirmText="Eliminar Animal"
+                confirmColor="bg-red-600 hover:bg-red-700"
+                cancelText="Cancelar"
+                confirmVariant="destructive"
+                icon={<Trash2 className="h-6 w-6 text-red-500" />}
+                size="md"
+                message={
+                    <span className="text-gray-700">
+                        ¿Estás seguro de que quieres eliminar a <span className="font-bold text-red-600">{modalEliminarAnimal.animal?.nombre}</span>?
+                        <br />
+                        Esta acción es irreversible y también desvinculará cualquier collar asociado.
+                    </span>
+                }
+            />
+
+            {/* Modal para Eliminar Animales Seleccionados */}
+            <ModalGenerico
+                isOpen={modalEliminarAnimales.abierto}
+                title="Eliminar Animales Seleccionados"
+                onConfirm={handleEliminarAnimalesSeleccionadosConfirm}
+                onCancel={() => setModalEliminarAnimales({ abierto: false, ids: [] })}
+                confirmText="Eliminar"
+                confirmColor="bg-red-600 hover:bg-red-700"
+                cancelText="Cancelar"
+                confirmVariant="destructive"
+                icon={<Trash2 className="h-6 w-6 text-red-500" />}
+                size="md"
+                message={
+                    <span className="text-gray-700">
+                        ¿Estás seguro de que quieres eliminar {modalEliminarAnimales.ids.length} animales seleccionados?
+                        Esta acción es irreversible.
+                    </span>
+                }
+            />
+
             {/* Modal para Eliminar Collar */}
             <ModalGenerico
                 isOpen={modalEliminarCollar.abierto}
@@ -781,13 +875,13 @@ export default function AnimalView() {
                 }
             />
 
-            {/* Modal para Eliminar Animal */}
+            {/* Modal para Eliminar Collares Seleccionados */}
             <ModalGenerico
-                isOpen={modalEliminarAnimal.abierto}
-                title="Confirmar Eliminación de Animal"
-                onConfirm={handleEliminarAnimalConfirm}
-                onCancel={() => setModalEliminarAnimal({ abierto: false, animal: null })}
-                confirmText="Eliminar Animal"
+                isOpen={modalEliminarCollares.abierto}
+                title="Eliminar Collares Seleccionados"
+                onConfirm={handleEliminarCollaresSeleccionadosConfirm}
+                onCancel={() => setModalEliminarCollares({ abierto: false, ids: [] })}
+                confirmText="Eliminar"
                 confirmColor="bg-red-600 hover:bg-red-700"
                 cancelText="Cancelar"
                 confirmVariant="destructive"
@@ -795,9 +889,8 @@ export default function AnimalView() {
                 size="md"
                 message={
                     <span className="text-gray-700">
-                        ¿Estás seguro de que quieres eliminar a <span className="font-bold text-red-600">{modalEliminarAnimal.animal?.nombre}</span>?
-                        <br />
-                        Esta acción es irreversible y también desvinculará cualquier collar asociado.
+                        ¿Estás seguro de que quieres eliminar {modalEliminarCollares.ids.length} collares seleccionados?
+                        Se desvincularán de cualquier animal asignado.
                     </span>
                 }
             />

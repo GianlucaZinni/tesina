@@ -21,7 +21,7 @@ from backend.app.models import (
     Usuario,
     Campo
 )
-from backend.app.models.animal import Animal, AnimalCreate, AnimalUpdate, AnimalOut
+from backend.app.models.animal import Animal, AnimalCreate, AnimalUpdate, AnimalBatchDelete
 from backend.app.login_manager import get_current_user
 from backend.app.routes.collares.helpers import get_estado_id
 from .helpers import is_animal_outside, generate_identifier
@@ -584,3 +584,31 @@ def delete_animal(
     db.delete(animal)
     db.commit()
     return {"status": "ok", "message": "Animal eliminado correctamente"}
+
+
+@router.delete("/", response_model=Dict)
+def batch_delete_animals(
+    request: AnimalBatchDelete,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    deleted = 0
+    for animal_id in request.ids:
+        animal = db.get(Animal, animal_id)
+        if not animal:
+            continue
+        if animal.parcela and animal.parcela.campo.usuario_id != current_user.id:
+            continue
+        asignacion = db.query(AsignacionCollar).filter_by(animal_id=animal_id, fecha_fin=None).first()
+        if asignacion:
+            asignacion.fecha_fin = datetime.now()
+            collar = db.get(Collar, asignacion.collar_id)
+            disponible_id = get_estado_id("disponible", db)
+            if collar:
+                collar.estado_collar_id = disponible_id
+                db.add(collar)
+            db.add(asignacion)
+        db.delete(animal)
+        deleted += 1
+    db.commit()
+    return {"status": "ok", "message": f"Se han eliminado los {deleted} animales seleccionados."}

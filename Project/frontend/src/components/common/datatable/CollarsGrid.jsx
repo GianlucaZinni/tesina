@@ -24,8 +24,8 @@ import {
 
 // Componentes
 import SearchBar from "./SearchBar";
-import ExportButton from "./ExportButton"; 
-import ImportButton from "./ImportButton"; 
+import ExportButton from "./ExportButton";
+import ImportButton from "./ImportButton";
 import PaginationControls from "./PaginationControls";
 import RowsPerPageSelector from "./RowsPerPageSelector";
 
@@ -112,6 +112,7 @@ export default function CollarsGrid({
     collares = [],
     onCreateBatch,
     onDelete,
+    onDeleteSelected,
     onEditCollar,
     fullCollarDataForExport = [],
     onImportSuccess,
@@ -185,21 +186,34 @@ export default function CollarsGrid({
             const codigo = row.original.codigo?.toLowerCase() || '';
             const estado = row.original.estado?.toLowerCase() || '';
             const animalNombre = row.original.animal_nombre?.toLowerCase() || '';
-    
+
             return (
                 codigo.includes(searchTerm) ||
                 estado.includes(searchTerm) ||
                 animalNombre.includes(searchTerm)
             );
         },
-    });    
+    });
 
     const displayedCollarRows = table.getRowModel().rows;
-
+    const [lastSelectedIndex, setLastSelectedIndex] = React.useState(null);
 
     const clearAllSelections = useCallback(() => {
         setRowSelection({});
+        setLastSelectedIndex(null);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                clearAllSelections();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [clearAllSelections]);
 
     const toggleAllPageRowsSelected = useCallback(() => {
         if (table.getIsAllPageRowsSelected()) {
@@ -219,6 +233,29 @@ export default function CollarsGrid({
         return { text: "Seleccionar Página", icon: <Check className="h-4 w-4" />, variant: "outline" };
     }, [table]);
 
+    const handleRowClick = (row, index, event) => {
+        let newSelection = { ...rowSelection };
+
+        if (event.shiftKey && lastSelectedIndex !== null) {
+            const rowIdsOnPage = displayedCollarRows.map(r => r.id);
+            const [start, end] = [lastSelectedIndex, index].sort((a, b) => a - b);
+            for (let i = start; i <= end; i++) {
+                newSelection[rowIdsOnPage[i]] = true;
+            }
+        } else if (event.ctrlKey || event.metaKey) {
+            newSelection[row.id] = !newSelection[row.id];
+            setLastSelectedIndex(index);
+        } else {
+            if (newSelection[row.id] && Object.keys(newSelection).length === 1) {
+                delete newSelection[row.id];
+            } else {
+                newSelection = { [row.id]: true };
+            }
+            setLastSelectedIndex(index);
+        }
+        setRowSelection(newSelection);
+    };
+
     const hasAnyFilters = table.getState().globalFilter || table.getAllColumns().some(col => col.getIsFiltered())
 
     const selectAllButtonState = getSelectAllButtonState();
@@ -232,7 +269,7 @@ export default function CollarsGrid({
                     Registrar Nuevos Collares
                 </h3>
                 <Form {...form}>
-                <form
+                    <form
                         onSubmit={form.handleSubmit(onSubmitBatch)}
                         className="flex flex-col md:flex-row md:items-end gap-4 flex-wrap"
                     >
@@ -316,7 +353,21 @@ export default function CollarsGrid({
                                 <XCircle className="h-4 w-4" /> <span className="hidden lg:inline">Limpiar Filtros</span>
                             </Button>
                         )}
-                        
+
+
+                        {Object.keys(rowSelection).length > 0 && (
+                            <Button
+                                onClick={() => {
+                                    const ids = table.getSelectedRowModel().rows.map(r => r.original.id);
+                                    onDeleteSelected(ids);
+                                }}
+                                variant="ghost"
+                                className="gap-2 bg-red-700 hover:bg-red-800 text-white shadow-md w-full sm:w-auto"
+                            >
+                                <Trash2 className="h-4 w-4" /> <span className="hidden lg:inline">Eliminar Seleccionado</span>
+                            </Button>
+                        )}
+
                         <ExportButton
                             table={table}
                             filename="collares"
@@ -324,7 +375,7 @@ export default function CollarsGrid({
                         />
 
                         <ImportButton
-                            entityType="collares" 
+                            entityType="collares"
                             onImportSuccess={onImportSuccess}
                         />
                     </div>
@@ -361,7 +412,7 @@ export default function CollarsGrid({
                                             "flex flex-col justify-center p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-150 min-h-[120px] cursor-pointer relative",
                                             isSelected ? "border-blue-500 ring-2 ring-blue-500 bg-blue-50" : "border-gray-200"
                                         )}
-                                        onClick={row.getToggleSelectedHandler()}
+                                        onClick={(e) => handleRowClick(row, row.index, e)}
                                     >
 
                                         <div className="space-y-1 mb-2">

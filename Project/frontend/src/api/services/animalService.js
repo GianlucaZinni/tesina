@@ -2,7 +2,7 @@
 
 import { apiFetch } from '../apiClient';
 
-export async function fetchAnimalesInit() {
+export async function fetchAnimals() {
     const res = await apiFetch('/api/animals/')
     if (!res.ok) throw new Error('Error al cargar animales')
     return await res.json()
@@ -20,19 +20,19 @@ export async function fetchAnimalAcronyms() {
     return await res.json()
 }
 
-export async function fetchAnimalesOptions() {
+export async function fetchAnimalsOptions() {
     const res = await apiFetch('/api/animals/options')
     if (!res.ok) throw new Error('Error al cargar las opciones')
     return await res.json()
 }
 
-export async function fetchFichaSimple(animalId) {
+export async function fetchSimpleSheet(animalId) {
     const res = await apiFetch(`/api/animals/${animalId}/simple_sheet`)
     if (!res.ok) throw new Error('Error al cargar ficha simple')
     return await res.json()
 }
 
-export async function fetchFichaCompleta(animalId) {
+export async function fetchCompleteSheet(animalId) {
     const res = await apiFetch(`/api/animals/${animalId}/complete_sheet`)
     if (!res.ok) throw new Error('Error al cargar ficha completa')
     return await res.json()
@@ -74,18 +74,17 @@ export async function deleteAnimal(animalId) {
     return await res.json()
 }
 
-// Ruta actualizada a PUT /api/animals/bulk_upsert
-export async function apiAnimalsBulkUpsert() {
-    const res = await apiFetch(`/api/animals/bulk_upsert`, {
-        method: 'POST',
+export async function deleteAnimalsBatch(ids) {
+    const res = await apiFetch('/api/animals/', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ids })
     })
     if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || 'Error al actualizar animales en masa')
+        const error = await res.json();
+        throw new Error(error.message || 'Error al eliminar animales');
     }
-    return await res.json()
+    return await res.json();
 }
 
 export async function downloadAnimalTemplate() {

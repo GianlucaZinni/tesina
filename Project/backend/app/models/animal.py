@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Date, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from backend.app.db import Base
-from typing import Optional
+from typing import Optional, List
 from datetime import date
 from pydantic import BaseModel
 
@@ -66,25 +66,5 @@ class AnimalUpdate(AnimalCreate):
     nombre: Optional[str] = None
 
 
-class AnimalOut(BaseModel):
-    id: int
-    nombre: str
-    numero_identificacion: Optional[str] = None
-    fecha_nacimiento: Optional[date] = None
-    peso: Optional[float] = None
-    altura_cruz: Optional[float] = None
-    longitud_tronco: Optional[float] = None
-    perimetro_toracico: Optional[float] = None
-    ancho_grupa: Optional[float] = None
-    longitud_grupa: Optional[float] = None
-    estado_reproductivo_id: Optional[int] = None
-    numero_partos: Optional[int] = None
-    intervalo_partos: Optional[int] = None
-    fertilidad: Optional[float] = None
-    ubicacion_sensor: Optional[str] = None
-    parcela_id: Optional[int] = None
-    raza_id: Optional[int] = None
-    sexo_id: Optional[int] = None
-
-    class Config:
-        orm_mode = True
+class AnimalBatchDelete(BaseModel):
+    ids: List[int]

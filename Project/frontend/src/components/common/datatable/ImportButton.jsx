@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
 
 // Importar servicios según el tipo de entidad
 import { importAnimals, downloadAnimalTemplate } from '@/api/services/animalService';
-import { importCollares, downloadCollarTemplate } from '@/api/services/collarService';
+import { importCollars, downloadCollarTemplate } from '@/api/services/collarService';
 
 export default function ImportButton({ entityType, onImportSuccess }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -46,7 +46,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
             if (entityType === 'animals') {
                 result = await importAnimals(selectedFile);
             } else if (entityType === 'collares') {
-                result = await importCollares(selectedFile);
+                result = await importCollars(selectedFile);
             } else {
                 throw new Error('Tipo de entidad no soportado para importación.');
             }

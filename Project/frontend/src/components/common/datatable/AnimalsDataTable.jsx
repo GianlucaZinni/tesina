@@ -22,7 +22,7 @@ import GlobalFilterPanel from './GlobalFilterPanel';
 import { useEffect, useCallback } from "react";
 
 import { Button } from '@/components/ui/shadcn/button';
-import { Check, X, XCircle, Ban, Minus, SortAsc, SortDesc, ListFilter, PawPrint } from 'lucide-react';
+import { Check, X, XCircle, Ban, Minus, SortAsc, SortDesc, ListFilter, PawPrint, Trash2 } from 'lucide-react';
 
 import { useWindowWidth, BREAKPOINTS } from "@/lib/utils"
 
@@ -36,6 +36,7 @@ export default function AnimalsDataTable({
     onRowClick,
     onEditRow,
     onDeleteRow,
+    onDeleteSelected,
     globalFilter,
     setGlobalFilter,
     rowSelection,
@@ -227,6 +228,19 @@ export default function AnimalsDataTable({
                             className="gap-2 bg-red-700 hover:bg-red-800 text-white shadow-md w-full sm:w-auto"
                         >
                             <XCircle className="h-4 w-4" /> <span className="hidden lg:inline">Limpiar Filtros</span>
+                        </Button>
+                    )}
+
+                    {Object.keys(rowSelection).length > 0 && (
+                        <Button
+                            onClick={() => {
+                                const ids = table.getSelectedRowModel().rows.map(r => r.original.animal_id);
+                                onDeleteSelected(ids);
+                            }}
+                            variant="ghost"
+                            className="gap-2 bg-red-700 hover:bg-red-800 text-white shadow-md w-full sm:w-auto"
+                        >
+                            <Trash2 className="h-4 w-4" /> <span className="hidden lg:inline">Eliminar Seleccionado</span>
                         </Button>
                     )}
 

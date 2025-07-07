@@ -1,6 +1,6 @@
 import { apiFetch } from '../apiClient';
 
-export async function fetchCollaresInit() {
+export async function fetchCollars() {
     const res = await apiFetch('/api/collares/')
     if (!res.ok) {
         const errorData = await res.json();
@@ -18,7 +18,7 @@ export async function fetchCollarStates() {
     return await res.json();
 }
 
-export async function fetchCollaresDisponibles() {
+export async function fetchCollarsAvailables() {
     const res = await apiFetch('/api/collares/available')
     if (!res.ok) {
         const errorData = await res.json();
@@ -38,7 +38,20 @@ export async function deleteCollar(collarId) {
     return await res.json()
 }
 
-export const createCollarBatch = async (data) => {
+export async function deleteCollarsBatch(ids) {
+    const res = await apiFetch('/api/collares/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+    })
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al eliminar collares.');
+    }
+    return await res.json();
+}
+
+export const createCollarsBatch = async (data) => {
     const response = await apiFetch('/api/collares/', {
         method: 'POST',
         headers: {
@@ -105,7 +118,7 @@ export async function downloadCollarTemplate() {
     return res.blob();
 }
 
-export async function exportCollares(type, filters = {}) {
+export async function exportCollars(type, filters = {}) {
     const params = new URLSearchParams({ type });
     if (filters.globalFilter) {
         params.append('globalFilter', filters.globalFilter);
@@ -122,7 +135,7 @@ export async function exportCollares(type, filters = {}) {
     return res.blob();
 }
 
-export async function importCollares(file) {
+export async function importCollars(file) {
     const formData = new FormData();
     formData.append('file', file);
 

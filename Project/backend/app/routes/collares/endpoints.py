@@ -19,6 +19,7 @@ from backend.app.models.collar import (
     CollarUpdate,
     CollarAssign,
     CollarState,
+    CollarBatchDelete
 )
 from backend.app.models.usuario import Usuario
 from backend.app.login_manager import get_current_user
@@ -337,6 +338,34 @@ def delete_collar(
             "status": "error",
             "message": "Error interno del servidor al eliminar collar: " + str(e),
         }
+
+@router.delete("/", response_model=Dict)
+def batch_delete_collars(
+    request: CollarBatchDelete,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    deleted = 0
+    try:
+        for collar_id in request.ids:
+            collar = db.get(Collar, collar_id)
+            if not collar:
+                continue
+            asignacion = (
+                db.query(AsignacionCollar)
+                .filter_by(collar_id=collar.id, fecha_fin=None)
+                .first()
+            )
+            if asignacion:
+                asignacion.fecha_fin = datetime.utcnow()
+                db.add(asignacion)
+            db.delete(collar)
+            deleted += 1
+        db.commit()
+        return {"status": "ok", "message": f"Se han eliminado los {deleted} animales seleccionados."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error interno del servidor al eliminar collares: " + str(e))
 
 
 @router.post("/{collar_id}/assign")
