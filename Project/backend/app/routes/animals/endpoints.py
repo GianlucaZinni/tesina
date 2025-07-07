@@ -18,12 +18,13 @@ from backend.app.models import (
     Sexo,
     EstadoReproductivo,
     EstadoCollar,
-    Usuario
+    Usuario,
+    Campo
 )
 from backend.app.models.animal import Animal, AnimalCreate, AnimalUpdate, AnimalOut
 from backend.app.login_manager import get_current_user
 from backend.app.routes.collares.helpers import get_estado_id
-from .helpers import is_animal_outside
+from .helpers import is_animal_outside, generate_identifier
 
 router = APIRouter(prefix="/api/animals")
 
@@ -285,6 +286,29 @@ def cluster_animals(
 
 
 # ---------------------------------------------------------------------------
+# Lista de acrónimos existentes
+# ---------------------------------------------------------------------------
+
+@router.get("/acronimos")
+def get_acronyms(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    rows = (
+        db.query(Animal.numero_identificacion)
+        .join(Parcela, Animal.parcela_id == Parcela.id)
+        .join(Campo, Parcela.campo_id == Campo.id)
+        .filter(Campo.usuario_id == current_user.id)
+        .filter(Animal.numero_identificacion.isnot(None))
+        .all()
+    )
+
+    acronyms = sorted({(r[0].split("-")[0]) for r in rows if "-" in (r[0] or "")})
+    return {"acronimos": acronyms}
+
+
+
+# ---------------------------------------------------------------------------
 # Opciones para selects en el frontend
 # ---------------------------------------------------------------------------
 
@@ -451,16 +475,23 @@ def create_animal(
     sexo_id = data.sexo_id
     raza_id = data.raza_id
     parcela_id = data.parcela_id
-    if not all([nombre, sexo_id, raza_id, parcela_id]):
+    acronimo = (data.acronimo_identificacion or "").upper()
+
+    if not all([nombre, sexo_id, raza_id, parcela_id, acronimo]):
         raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
 
     parcela = db.get(Parcela, parcela_id)
     if not parcela or parcela.campo.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Parcela no valida o no autorizada")
 
+    try:
+        numero_identificacion = generate_identifier(acronimo, db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     nuevo = Animal(
         nombre=nombre,
-        numero_identificacion="ID-x",
+        numero_identificacion=numero_identificacion,
         raza_id=raza_id,
         sexo_id=sexo_id,
         fecha_nacimiento=data.fecha_nacimiento,

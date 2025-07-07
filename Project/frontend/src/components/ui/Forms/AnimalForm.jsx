@@ -172,6 +172,7 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                                 <FormControl>
                                                     <Input
                                                         {...field}
+                                                        list="acronimos-list"
                                                         placeholder="Ej: ABCD (4 letras)"
                                                         maxLength={4}
                                                         onChange={(e) => {
@@ -181,6 +182,18 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                                             }
                                                         }}
                                                     />
+                                                    <Select id="acronimos-list" onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Seleccionar parcela" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {animalOptions.acronimos?.map(ac => (
+                                                                <option key={ac} value={ac} />
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </FormControl>
                                                 <FormDescription>Acrónimo de agrupación del animal.</FormDescription>
                                                 <FormMessage />

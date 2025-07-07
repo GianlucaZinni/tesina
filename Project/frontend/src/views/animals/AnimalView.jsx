@@ -8,6 +8,7 @@ import {
     createAnimal,
     updateAnimal,
     deleteAnimal,
+    fetchAnimalAcronyms,
     fetchAnimalesOptions,
 } from '@/api/services/animalService';
 import {
@@ -109,7 +110,7 @@ export default function AnimalView() {
     const [animales, setAnimales] = useState([]);
     const [collares, setCollares] = useState([]);
     const [parcelas, setParcelas] = useState([]);
-    const [animalOptions, setAnimalOptions] = useState({ tipos: [], razas: [], sexos: [], parcelas: [], especies: [], estados_reproductivos: [] });
+    const [animalOptions, setAnimalOptions] = useState({ tipos: [], razas: [], sexos: [], parcelas: [], especies: [], estados_reproductivos: [], acronimos: [] });
     const [collarStatesOptions, setCollarStatesOptions] = useState([]);
     const [formData, setFormData] = useState({});
     const [collarFormData, setCollarFormData] = useState({});
@@ -160,14 +161,15 @@ export default function AnimalView() {
             previousScroll.current.collares = collarGridRef.current.scrollTop;
         }
         try {
-            const [animalesRes, collaresRes, parcelasRes, opcionesRes, collarStatesRes] = await Promise.all([
+            const [animalesRes, collaresRes, parcelasRes, opcionesRes, acronimosRes, collarStatesRes] = await Promise.all([
                 fetchAnimalesInit(),
                 fetchCollaresInit(),
                 fetchMapFeatures(),
                 fetchAnimalesOptions(),
+                fetchAnimalAcronyms(),
                 fetchCollarStates(),
             ]);
-
+            
             const animalIdToCollarMap = new Map();
             collaresRes.forEach(collar => {
                 if (collar.animal_id) {
@@ -201,7 +203,7 @@ export default function AnimalView() {
             setCollares(collaresRes);
             const todasLasParcelas = Object.values(parcelasRes.parcelas || {}).flat();
             setParcelas(todasLasParcelas);
-            setAnimalOptions(opcionesRes);
+            setAnimalOptions({ ...opcionesRes, acronimos: acronimosRes.acronimos });
             setCollarStatesOptions(collarStatesRes);
         } catch (error) {
             console.error("Error al cargar datos iniciales:", error);

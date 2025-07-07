@@ -44,6 +44,7 @@ class Animal(Base):
 class AnimalCreate(BaseModel):
     nombre: str
     numero_identificacion: Optional[str] = None
+    acronimo_identificacion: Optional[str] = None
     fecha_nacimiento: Optional[date] = None
     peso: Optional[float] = None
     altura_cruz: Optional[float] = None

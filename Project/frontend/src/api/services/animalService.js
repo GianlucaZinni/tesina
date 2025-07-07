@@ -14,6 +14,12 @@ export async function fetchAnimalsEntities(campoId) {
     return await res.json()
 }
 
+export async function fetchAnimalAcronyms() {
+    const res = await apiFetch('/api/animals/acronimos')
+    if (!res.ok) throw new Error('Error al cargar los acrónimos')
+    return await res.json()
+}
+
 export async function fetchAnimalesOptions() {
     const res = await apiFetch('/api/animals/options')
     if (!res.ok) throw new Error('Error al cargar las opciones')
