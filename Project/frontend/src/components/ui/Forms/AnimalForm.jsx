@@ -9,6 +9,7 @@ import {
     Tabs, TabsList, TabsTrigger, TabsContent
 } from '@/components/ui/shadcn/tabs';
 import { Input } from '@/components/ui/shadcn/input';
+import AcronymInput from './AcronymInput';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/shadcn/select';
 import { Button } from '@/components/ui/shadcn/button';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/shadcn/tooltip';
@@ -17,7 +18,7 @@ import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription
 } from '@/components/ui/shadcn/form';
 
-import { Info, PawPrint, Ruler, Heart, Venus, Mars, CircleDashed } from 'lucide-react';
+import { Info, PawPrint, Ruler, Heart, Venus, Mars, CircleDashed, ChevronDown } from 'lucide-react';
 
 const schemaBase = z.object({
     animal_id: z.number().optional(),
@@ -170,30 +171,11 @@ export default function AnimalForm({ animal = {}, modoEdicion, parcelas = [], an
                                             <FormItem>
                                                 <FormLabel>Acrónimo de Identificación</FormLabel>
                                                 <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        list="acronimos-list"
-                                                        placeholder="Ej: ABCD (4 letras)"
-                                                        maxLength={4}
-                                                        onChange={(e) => {
-                                                            const onlyLetters = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
-                                                            if (onlyLetters.length <= 4) {
-                                                                field.onChange(onlyLetters);
-                                                            }
-                                                        }}
+                                                    <AcronymInput
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        options={animalOptions.acronimos || []}
                                                     />
-                                                    <Select id="acronimos-list" onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Seleccionar parcela" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            {animalOptions.acronimos?.map(ac => (
-                                                                <option key={ac} value={ac} />
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
                                                 </FormControl>
                                                 <FormDescription>Acrónimo de agrupación del animal.</FormDescription>
                                                 <FormMessage />
