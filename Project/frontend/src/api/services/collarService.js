@@ -146,3 +146,14 @@ export async function importCollars(file) {
     }
     return res.json();
 }
+
+export async function downloadImportResultFile(importId) {
+    console.log(importId)
+    const response = await fetch(`/api/collares/import/file/${importId}`, {
+        method: "GET",
+    });
+    if (!response.ok) {
+        throw new Error("No se pudo descargar el detalle del archivo.");
+    }
+    return await response.blob();
+}

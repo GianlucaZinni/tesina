@@ -12,7 +12,7 @@ class Animal(Base):
     numero_identificacion = Column(String(50), unique=True)
     fecha_nacimiento = Column(Date)
 
-    # Zoometría
+    # Zoometria
     peso = Column(Float)
     altura_cruz = Column(Float)
     longitud_tronco = Column(Float)
@@ -20,7 +20,7 @@ class Animal(Base):
     ancho_grupa = Column(Float)
     longitud_grupa = Column(Float)
 
-    # Reproducción
+    # Reproduccion
     estado_reproductivo_id = Column(Integer, ForeignKey('estado_reproductivo_animales.id'))
     estado_reproductivo = relationship('EstadoReproductivo', backref='animales', lazy=True)
     numero_partos = Column(Integer)

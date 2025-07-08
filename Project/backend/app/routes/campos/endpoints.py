@@ -24,7 +24,7 @@ def api_create_campo(
     ):
         raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
 
-    # Si no existen campos previos, este será el preferido
+    # Si no existen campos previos, este sera el preferido
     campos_existentes = db.query(Campo).filter_by(usuario_id=current_user.id).count()
     nuevo = Campo(
         nombre=data.nombre,

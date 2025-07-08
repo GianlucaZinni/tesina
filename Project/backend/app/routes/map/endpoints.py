@@ -51,7 +51,7 @@ def api_parcela_init(
         except Exception:
             continue
 
-    # Buscar campo preferido explícitamente
+    # Buscar campo preferido explicitamente
     campo_preferido = next((c for c in campos_usuario if c.is_preferred), None)
 
     if campo_preferido:

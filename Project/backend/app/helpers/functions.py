@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from backend.app.db import get_db
 
 # --- Variables globales para los estados de collar ---
-# Inicializadas como None o diccionarios vacíos, se llenarán dentro del contexto de la aplicación.
+# Inicializadas como None o diccionarios vacios, se llenaran dentro del contexto de la aplicacion.
 _estados_collar_map = None
 _estado_disponible_obj = None
 _estado_activo_obj = None
@@ -45,24 +45,24 @@ def _load_collar_states(
                     _estado_defectuoso_obj,
                 ]
             ):
-                print("WARNING: Faltan estados de collar críticos en la base de datos.")
-                # Aquí podrías lanzar una excepción o registrar un error severo si estos estados son esenciales.
-                # Para este caso, continuaremos, pero las funciones que los usen deberán verificar si son None.
+                print("WARNING: Faltan estados de collar criticos en la base de datos.")
+                # Aqui podrias lanzar una excepcion o registrar un error severo si estos estados son esenciales.
+                # Para este caso, continuaremos, pero las funciones que los usen deberan verificar si son None.
         except Exception as e:
             print(
                 f"ERROR: No se pudieron cargar los estados de collar al iniciar el Blueprint: {e}"
             )
-            # Esto podría indicar un problema con la DB o los modelos al inicio.
-            # Asegúrate de que tu app se inicie correctamente y que la DB esté migrada.
+            # Esto podria indicar un problema con la DB o los modelos al inicio.
+            # Asegurate de que tu app se inicie correctamente y que la DB este migrada.
 
 
 def get_estado_collar_id(nombre_estado):
     """Obtiene el ID de un estado de collar por su nombre."""
     if (
         _estados_collar_map is None
-    ):  # Si por alguna razón no se cargó al inicio, intentar cargar ahora
+    ):  # Si por alguna razon no se cargo al inicio, intentar cargar ahora
         _load_collar_states()
-        if _estados_collar_map is None:  # Si sigue siendo None, algo está muy mal
+        if _estados_collar_map is None:  # Si sigue siendo None, algo esta muy mal
             return None  # O lanzar error
 
     estado = _estados_collar_map.get(nombre_estado.lower())
@@ -91,11 +91,11 @@ def get_animal_by_identificacion(
 ):
     if not numero_identificacion:
         return None
-    # Asegúrate de que Parcela y Campo estén importados para esta consulta
+    # Asegurate de que Parcela y Campo esten importados para esta consulta
     from backend.app.models import (
         Parcela,
         Campo,
-    )  # Importación local si es necesario para evitar circular imports
+    )  # Importacion local si es necesario para evitar circular imports
 
     animal = (
         db.query(Animal)
@@ -109,7 +109,7 @@ def get_animal_by_identificacion(
 
 
 def _create_new_collar_logic(codigo, db: Session = Depends(get_db)):
-    """Crea un nuevo collar con estado 'disponible' y batería 100%."""
+    """Crea un nuevo collar con estado 'disponible' y bateria 100%."""
     if not _estado_disponible_obj:
         raise ValueError("Estado 'disponible' no configurado en la base de datos.")
 
@@ -125,7 +125,7 @@ def _create_new_collar_logic(codigo, db: Session = Depends(get_db)):
 
 
 def _end_active_assignment(assignment, db: Session = Depends(get_db)):
-    """Finaliza una asignación activa."""
+    """Finaliza una asignacion activa."""
     if assignment and assignment.fecha_fin is None:
         assignment.fecha_fin = datetime.now()
         db.add(assignment)
@@ -142,7 +142,7 @@ def _end_active_assignment(assignment, db: Session = Depends(get_db)):
 def _create_new_assignment_logic(
     collar_id, animal_id, usuario_id, db: Session = Depends(get_db)
 ):
-    """Crea una nueva asignación de collar y pone el collar en estado 'activo'."""
+    """Crea una nueva asignacion de collar y pone el collar en estado 'activo'."""
     if not _estado_activo_obj:
         raise ValueError("Estado 'activo' no configurado en la base de datos.")
 
@@ -166,10 +166,10 @@ def _assign_collar(
     collar, animal_to_assign, current_user_id, db: Session = Depends(get_db)
 ):
     """
-    Gestiona la asignación de un collar a un animal.
+    Gestiona la asignacion de un collar a un animal.
     Finaliza asignaciones previas si es necesario.
     """
-    # 1. Finalizar asignación activa del COLLAR (si este collar ya estaba asignado)
+    # 1. Finalizar asignacion activa del COLLAR (si este collar ya estaba asignado)
     current_collar_assignment = AsignacionCollar.query.filter_by(
         collar_id=collar.id, fecha_fin=None
     ).first()
@@ -177,13 +177,13 @@ def _assign_collar(
 
     # 2. Si hay un animal_to_assign, asignarlo
     if animal_to_assign:
-        # Finalizar cualquier asignación activa del ANIMAL (si el animal ya tiene otro collar)
+        # Finalizar cualquier asignacion activa del ANIMAL (si el animal ya tiene otro collar)
         existing_animal_assignment = AsignacionCollar.query.filter_by(
             animal_id=animal_to_assign.id, fecha_fin=None
         ).first()
         _end_active_assignment(existing_animal_assignment)
 
-        # Crear la nueva asignación
+        # Crear la nueva asignacion
         _create_new_assignment_logic(collar.id, animal_to_assign.id, current_user_id)
     else:  # Si animal_to_assign es None, el collar queda desasignado y pasa a disponible
         if collar.estado_collar_id not in [

@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 import csv
 from io import StringIO
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Body
 from fastapi import UploadFile, File
 from sqlalchemy.orm import Session
 
@@ -23,14 +23,16 @@ from backend.app.models.collar import (
 )
 from backend.app.models.usuario import Usuario
 from backend.app.login_manager import get_current_user
+from backend.app.cache.import_result_cache import store_import_result, get_import_result
 
 from .helpers import (
     get_estado_id,
     get_estado_nombre,
     create_new_collar_logic,
     assign_collar,
-    sanitize_and_validate_collar_code,
+    process_import,
 )
+
 
 router = APIRouter(prefix="/api/collares")
 
@@ -360,152 +362,32 @@ def import_collares(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Importar collares desde un archivo CSV."""
     content = file.file.read().decode("utf-8-sig")
-    reader = csv.DictReader(StringIO(content))
+    result = process_import(content, db, current_user)
+    import_id = store_import_result(result)
+    response = result.copy()
+    response.pop("rows", None)
+    response["import_id"] = import_id
+    return response
 
-    expected_cols = {"codigo", "Codigo", "codigo (Collar)"}
-    code_key = next((c for c in (reader.fieldnames or []) if c in expected_cols), None)
-    id_key = next(
-        (
-            c
-            for c in (reader.fieldnames or [])
-            if c.lower()
-            in ["id", "numero_identificacion", "numero_identificacion (animal)"]
-        ),
-        None,
+
+@router.get("/import/file/{import_id}")
+def download_import_detail(import_id: str):
+    result = get_import_result(import_id)
+    if not result or "rows" not in result:
+        raise HTTPException(status_code=404, detail="Resultado de importación no encontrado")
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Codigo", "ID", "# Detalle"])
+    for codigo, ident, detalle in result["rows"]:
+        writer.writerow([codigo, ident, detalle])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=collares_import_result.csv"},
     )
-    if not code_key or not id_key:
-        raise HTTPException(
-            status_code=400,
-            detail="Encabezados CSV invalidos. Se requieren 'Codigo' e 'ID'.",
-        )
-
-    summary = {"total_processed": 0, "created": 0, "updated": 0, "errors_count": 0}
-    errors = []
-    details = []
-    row_num = 5  # header row
-
-    for row in reader:
-        if not row.get("Codigo") or row["Codigo"].startswith("#"):
-            continue
-        row_num += 1
-        summary["total_processed"] += 1
-        codigo_raw = (row.get(code_key) or "").strip()
-        codigo, codigo_errors = sanitize_and_validate_collar_code(codigo_raw)
-        row_errors = []
-        if codigo_errors:
-            row_errors.extend(codigo_errors)
-        numero_identificacion = (row.get(id_key) or "").strip()
-
-        if not codigo:
-            row_errors.append(
-                {"field": "Codigo", "value": codigo, "message": "Codigo requerido"}
-            )
-            errors.append({"row": row_num, "errors": row_errors})
-            summary["errors_count"] += 1
-            continue
-
-        try:
-            collar = None
-            collar = db.query(Collar).filter_by(codigo=codigo).first()
-            created_now = False
-            if not collar:
-                collar = create_new_collar_logic(codigo, db)
-                summary["created"] += 1
-                created_now = True
-
-            animal_obj = None
-            if numero_identificacion:
-                animal_obj = (
-                    db.query(Animal)
-                    .filter_by(numero_identificacion=numero_identificacion)
-                    .first()
-                )
-                if not animal_obj:
-                    row_errors.append(
-                        {
-                            "field": "ID",
-                            "value": numero_identificacion,
-                            "message": "Animal no encontrado",
-                        }
-                    )
-                    summary["errors_count"] += 1
-
-            if row_errors:
-                errors.append({"row": row_num, "errors": row_errors})
-                continue  # no intentar asignacion si hay errores
-
-            # Verificar si la asignacion ya existe igual
-            current_assignment = (
-                db.query(AsignacionCollar)
-                .filter_by(collar_id=collar.id, fecha_fin=None)
-                .first()
-            )
-            already_assigned_to_same = (
-                current_assignment is not None
-                and animal_obj is not None
-                and current_assignment.animal_id == animal_obj.id
-            )
-
-            if not created_now and already_assigned_to_same:
-                continue  # Nada que hacer: no fue creado ni actualizado
-
-            info = assign_collar(
-                collar,
-                animal_obj,
-                current_user.id,
-                db,
-            )
-
-            # Solo si hubo alguna accion real
-            msg = None
-            if created_now:
-                if info["assigned_to"]:
-                    msg = f"Collar {collar.codigo} creado y asignado a {info['assigned_to']}."
-                    if info["replaced_collar"]:
-                        msg += f" El collar {info['replaced_collar']} fue desasignado de {info['assigned_to']} y ahora esta disponible."
-                else:
-                    msg = f"Collar {collar.codigo} creado."
-            else:
-                if info["assigned_to"]:
-                    msg = f"Collar {collar.codigo} asignado a {info['assigned_to']}."
-                    if info["replaced_collar"]:
-                        msg += f" El collar {info['replaced_collar']} fue desasignado de {info['assigned_to']} y ahora esta disponible."
-                    summary["updated"] += 1
-                elif info["unassigned_from"]:
-                    msg = f"Collar {collar.codigo} fue desasignado de {info['unassigned_from']} y ahora esta disponible."
-                    summary["updated"] += 1
-
-            if msg:
-                details.append(msg)
-
-            db.commit()
-        except Exception as e:
-            db.rollback()
-            row_errors.append({"field": "general", "message": str(e)})
-            errors.append({"row": row_num, "errors": row_errors})
-            summary["errors_count"] += 1
-
-    status = (
-        "error"
-        if (summary["created"] == 0 and summary["updated"] == 0)
-        and summary["errors_count"] >= 1
-        else "success"
-    )
-    message = (
-        "Importacion completada"
-        if status == "success"
-        else "Importacion completada con errores"
-    )
-    return {
-        "status": status,
-        "message": message,
-        "summary": summary,
-        "errors": errors,
-        "details": details,
-    }
-
 
 @router.post("/export")
 def export_collares(
@@ -543,13 +425,14 @@ def export_collares(
     writer = csv.writer(output)
 
     # Fila de encabezado
-    writer.writerow(["Codigo", "ID", "", "# Instrucciones:"])
+    writer.writerow(["Codigo", "ID", "# Detalle", "# Instrucciones:"])
 
     # Lista de instrucciones
     instrucciones = [
         "1. El codigo debe tener min/max 4 letras, guion: '-', y un numero de min/max 5 cifras.",
         "2. Si el codigo no contiene los requisitos requeridos, sera registrado como error.",
-        "3. Si se intenta asignar un collar a un animal inexistente, sera registrado como error."
+        "3. Si se intenta asignar un collar a un animal inexistente, sera registrado como error.",
+        "4. El detalle se mostrara en el archivo descargable, luego de realizar una importacion.",
     ]
 
     # Escribir datos y emparejar instrucciones por fila
@@ -574,11 +457,39 @@ def export_template(
     writer = csv.writer(output)
 
     # Encabezado + instrucciones en columna 4
-    writer.writerow(["Codigo", "ID", "", "# Instrucciones:"])
-    writer.writerow(["AFGH-00001", "", "", "1. El codigo debe tener min/max 4 letras, guion: '-', y un numero de min/max 5 cifras."])
-    writer.writerow(["HADS-00001", "", "", "2. Si el codigo no contiene los requisitos requeridos, sera registrado como error."])
-    writer.writerow(["LTER-00001", "", "", "3. Si se intenta asignar un collar a un animal inexistente, sera registrado como error."])
-    writer.writerow(["AFGH-00002"])
+    writer.writerow(["Codigo", "ID", "# Detalle", "# Instrucciones:"])
+    writer.writerow(
+        [
+            "AFGH-00001",
+            "",
+            "",
+            "1. El codigo debe tener min/max 4 letras, guion: '-', y un numero de min/max 5 cifras.",
+        ]
+    )
+    writer.writerow(
+        [
+            "HADS-00001",
+            "",
+            "",
+            "2. Si el codigo no contiene los requisitos requeridos, sera registrado como error.",
+        ]
+    )
+    writer.writerow(
+        [
+            "LTER-00001",
+            "",
+            "",
+            "3. Si se intenta asignar un collar a un animal inexistente, sera registrado como error.",
+        ]
+    )
+    writer.writerow(
+        [
+            "AFGH-00002",
+            "",
+            "",
+            "4. El detalle se mostrara en el archivo descargable, luego de realizar una importacion.",
+        ]
+    )
     writer.writerow(["HADS-00002"])
 
     return Response(

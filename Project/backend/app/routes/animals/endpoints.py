@@ -286,7 +286,7 @@ def cluster_animals(
 
 
 # ---------------------------------------------------------------------------
-# Lista de acrónimos existentes
+# Lista de acronimos existentes
 # ---------------------------------------------------------------------------
 
 @router.get("/acronimos")
@@ -348,7 +348,7 @@ def get_options(
 
 
 # ---------------------------------------------------------------------------
-# Ficha simple para detalles rápidos
+# Ficha simple para detalles rapidos
 # ---------------------------------------------------------------------------
 
 @router.get("/{animal_id}/simple_sheet", response_model=Dict)
@@ -413,7 +413,7 @@ def animals_simple_sheet(
 
 
 # ---------------------------------------------------------------------------
-# Ficha completa para edición
+# Ficha completa para edicion
 # ---------------------------------------------------------------------------
 
 @router.get("/{animal_id}/complete_sheet", response_model=Dict)

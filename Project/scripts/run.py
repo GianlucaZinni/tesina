@@ -1,6 +1,5 @@
 import os
 import sys
-import uvicorn
 
 # Ensure the project root is in sys.path
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -27,4 +26,5 @@ def initialize_database():
 
 if __name__ == "__main__":
     initialize_database()
-    uvicorn.run(get_asgi_app(), host="0.0.0.0", port=5000)
+    import uvicorn
+    uvicorn.run(get_asgi_app(), host="0.0.0.0", port=5000, log_level="debug")

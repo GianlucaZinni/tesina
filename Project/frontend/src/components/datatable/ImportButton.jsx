@@ -17,19 +17,30 @@ import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
 
 // Importar servicios según el tipo de entidad
-import { importAnimals, downloadAnimalTemplate } from '@/api/services/animalService';
-import { importCollars, downloadCollarTemplate } from '@/api/services/collarService';
+import {
+    importAnimals,
+    downloadAnimalTemplate
+} from '@/api/services/animalService';
+
+import {
+    importCollars,
+    downloadCollarTemplate,
+    downloadImportResultFile
+} from '@/api/services/collarService';
 
 export default function ImportButton({ entityType, onImportSuccess }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDownloadLoading, setIsDownloadLoading] = useState(false);
     const [importResults, setImportResults] = useState(null);
+    const [importId, setImportId] = useState(null);
 
     const handleFileChange = (event) => {
         const file = event.target.files ? event.target.files[0] : null;
         setSelectedFile(file);
-        setImportResults(null); // Limpiar resultados anteriores al seleccionar nuevo archivo
+        setImportResults(null);
+        setImportId(null);
     };
 
     const handleImportClick = async () => {
@@ -40,13 +51,16 @@ export default function ImportButton({ entityType, onImportSuccess }) {
 
         setIsLoading(true);
         setImportResults(null);
+        setImportId(null);
 
         try {
             let result;
+
             if (entityType === 'animals') {
                 result = await importAnimals(selectedFile);
             } else if (entityType === 'collares') {
                 result = await importCollars(selectedFile);
+                setImportId(result.import_id || null);
             } else {
                 throw new Error('Tipo de entidad no soportado para importación.');
             }
@@ -58,23 +72,15 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                     description: result.message,
                     icon: <CheckCircle className="h-4 w-4 text-green-500" />,
                 });
-                setIsDialogOpen(false);
-                setSelectedFile(null);
-                if (onImportSuccess) {
-                    onImportSuccess(); // Callback para recargar datos en la vista principal
-                }
-            } else if (result.status === 'partial_success') {
-                toast.warning('Importación completada con algunos errores.', {
+                if (onImportSuccess) onImportSuccess();
+            } else {
+                toast.warning('Importación completada con errores.', {
                     description: result.message,
                     icon: <AlertCircle className="h-4 w-4 text-orange-500" />,
                     duration: 5000,
                 });
-            } else { // status: 'error' (para errores fatales del backend, aunque ya se maneja con res.ok)
-                toast.error('La importación falló.', {
-                    description: result.message || 'Ocurrió un error inesperado en el servidor.',
-                    icon: <XCircle className="h-4 w-4 text-red-500" />,
-                });
             }
+
         } catch (error) {
             console.error(`Error al importar ${entityType}:`, error);
             toast.error('Error al iniciar la importación.', {
@@ -111,6 +117,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+
             toast.success(`Plantilla de ${entityType} descargada correctamente.`);
         } catch (error) {
             console.error(`Error al descargar plantilla de ${entityType}:`, error);
@@ -123,13 +130,41 @@ export default function ImportButton({ entityType, onImportSuccess }) {
         }
     };
 
+    const handleDownloadResultsFile = async () => {
+        if (!importId) {
+            toast.error('No se encontró el identificador de importación.');
+            return;
+        }
+
+        setIsDownloadLoading(true);
+        try {
+            const blob = await downloadImportResultFile(importId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `resultado_import_${entityType}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success('Resultados descargados correctamente.');
+        } catch (error) {
+            console.error('Error al descargar resultados de importación:', error);
+            toast.error('Error al descargar resultados.', {
+                description: error.message,
+                icon: <XCircle className="h-4 w-4 text-red-500" />,
+            });
+        } finally {
+            setIsDownloadLoading(false);
+        }
+    };
+
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                <Button
-                    className="gap-2 bg-yellow-700 hover:bg-yellow-800 text-white shadow-md w-full sm:w-auto"
-                >
-                    <Upload className="h-4 w-4" /> <span className="hidden lg:inline">Importar</span>
+                <Button className="gap-2 bg-yellow-700 hover:bg-yellow-800 text-white shadow-md w-full sm:w-auto">
+                    <Upload className="h-4 w-4" />
+                    <span className="hidden lg:inline">Importar</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="w-full max-w-lg sm:max-w-xl bg-white p-4">
@@ -143,7 +178,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                             variant="link"
                             onClick={handleDownloadTemplate}
                             className="p-0 h-auto text-blue-800 hover:text-blue-800 flex items-center justify-start"
-                            disabled={isLoading}
+                            disabled={isLoading || isDownloadLoading}
                         >
                             <FileText className="h-4 w-4 mr-1" /> Descargar Plantilla
                         </Button>
@@ -160,7 +195,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                             accept=".csv"
                             onChange={handleFileChange}
                             className="col-span-3"
-                            disabled={isLoading}
+                            disabled={isLoading || isDownloadLoading}
                         />
                     </div>
                     {selectedFile && (
@@ -177,7 +212,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                             <p className="text-sm font-semibold">Actualizados: {importResults.summary.updated}</p>
                             <p className="text-sm font-semibold">Errores: {importResults.summary.errors_count}</p>
 
-                            {importResults.summary.errors_count > 0 && (
+                            {importResults.errors && importResults.errors.length > 0 && (
                                 <div className="mt-4">
                                     <h5 className="font-semibold text-sm text-red-600 mb-2 flex items-center gap-1">
                                         <List className="h-4 w-4" /> Detalles de Errores:
@@ -185,7 +220,6 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                                     <ScrollArea className="h-40 border rounded-xl p-2 bg-white">
                                         {importResults.errors.map((err, index) => (
                                             <div key={index} className="mb-2 text-xs text-red-700 border-b pb-1 last:border-b-0">
-                                                <p className="font-bold">Fila {err.row}:</p>
                                                 <ul className="list-disc pl-4">
                                                     {err.errors.map((detail, dIdx) => (
                                                         <li key={dIdx}>
@@ -218,16 +252,33 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                 <DialogFooter className="flex flex-col sm:flex-row justify-between sm:space-x-2">
                     <Button
                         variant="outline"
-                        onClick={() => { setIsDialogOpen(false); setSelectedFile(null); setImportResults(null); }}
+                        onClick={() => {
+                            setIsDialogOpen(false);
+                            setSelectedFile(null);
+                            setImportResults(null);
+                            setImportId(null);
+                            setIsDownloadLoading(false);
+                        }}
                         className="gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 shadow-md w-full sm:w-auto"
                     >
                         Cerrar
                     </Button>
+                    {importId && (
+                        <Button
+                            onClick={handleDownloadResultsFile}
+                            disabled={isDownloadLoading}
+                            variant="secondary"
+                            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md w-full sm:w-auto"
+                        >
+                            {isDownloadLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Descargar Detalle
+                        </Button>
+                    )}
                     <Button
                         onClick={handleImportClick}
                         disabled={!selectedFile || isLoading}
                         variant="default"
-                        className={`gap-2 bg-yellow-700 hover:bg-yellow-800 text-white shadow-md w-full sm:w-auto`}
+                        className="gap-2 bg-yellow-700 hover:bg-yellow-800 text-white shadow-md w-full sm:w-auto"
                     >
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Importar Archivo

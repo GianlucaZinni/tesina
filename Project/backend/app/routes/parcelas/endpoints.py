@@ -108,7 +108,7 @@ def api_create_parcela(
 
     campo = db.get(Campo, data.campo_id)
     if not campo or campo.usuario_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Campo no válido o no autorizado")
+        raise HTTPException(status_code=403, detail="Campo no valido o no autorizado")
 
     nueva = Parcela(
         nombre=data.nombre,

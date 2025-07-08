@@ -18,15 +18,15 @@ def login(form: LoginForm, db: Session = Depends(get_db)):
 
     user = db.query(Usuario).filter_by(username=form.username).first()
     # if not user or not check_password_hash(user.password, form.password):
-    #     raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    #     raise HTTPException(status_code=401, detail="Credenciales invalidas")
 
     if not user or not user.password == form.password:
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        raise HTTPException(status_code=401, detail="Credenciales invalidas")
 
     token = create_access_token({"sub": str(user.id)})
     return {
         "status": "ok",
-        "message": "Inicio de sesión exitoso",
+        "message": "Inicio de sesion exitoso",
         "access_token": token,
         "user": {
             "id": user.id,
@@ -38,8 +38,8 @@ def login(form: LoginForm, db: Session = Depends(get_db)):
 
 @router.post("/logout")
 def logout() -> dict:
-    # Con tokens JWT no hay sesión en servidor, por lo que solo devolvemos OK
-    return {"status": "ok", "message": "Sesión cerrada correctamente"}
+    # Con tokens JWT no hay sesion en servidor, por lo que solo devolvemos OK
+    return {"status": "ok", "message": "Sesion cerrada correctamente"}
 
 
 @router.get("/session")
