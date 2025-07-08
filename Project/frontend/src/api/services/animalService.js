@@ -96,36 +96,3 @@ export async function downloadAnimalTemplate() {
     // No parsear a JSON, se devuelve un blob directamente
     return res.blob();
 }
-
-export async function exportAnimals(type, filters = {}) {
-    const params = new URLSearchParams({ type });
-    if (filters.globalFilter) {
-        params.append('globalFilter', filters.globalFilter);
-    }
-    if (filters.ids && filters.ids.length > 0) {
-        params.append('ids', filters.ids.join(','));
-    }
-
-    const res = await apiFetch(`/api/animals/export?${params.toString()}`);
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al exportar animales.');
-    }
-    return res.blob();
-}
-
-export async function importAnimals(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await apiFetch('/api/animals/import', {
-        method: 'POST',
-        body: formData,
-    });
-
-    if (!res.ok) {
-        const errorData = await res.json(); // El backend devolverá JSON incluso en error
-        throw new Error(errorData.message || 'Error al importar animales.');
-    }
-    return await res.json(); // Devuelve el JSON con summary y errores
-}

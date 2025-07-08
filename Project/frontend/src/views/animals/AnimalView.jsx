@@ -55,8 +55,8 @@ import {
     Info,
 } from 'lucide-react';
 
-import AnimalsDataTable from "@/components/common/datatable/AnimalsDataTable";
-import CollarsGrid from '@/components/common/datatable/CollarsGrid'
+import AnimalsDataTable from "@/components/datatable/AnimalsDataTable";
+import CollarsGrid from '@/components/datatable/CollarsGrid'
 
 import { createColumnHelper } from '@tanstack/react-table';
 

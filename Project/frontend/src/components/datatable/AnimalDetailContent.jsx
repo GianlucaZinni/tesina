@@ -1,4 +1,4 @@
-// ~/Project/frontend/src/components/common/datatable/AnimalDetailContent.jsx
+// ~/Project/frontend/src/components/datatable/AnimalDetailContent.jsx
 import React from 'react';
 
 export default function AnimalDetailContent({ animal, columnVisibility = {} }) {
