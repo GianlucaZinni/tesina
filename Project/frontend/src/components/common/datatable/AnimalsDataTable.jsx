@@ -143,6 +143,7 @@ export default function AnimalsDataTable({
 
     const handleRowClick = (row, index, event) => {
         if (!showExpandableRows) {
+            event.preventDefault();
             let newSelection = { ...rowSelection };
 
             if (event.shiftKey && lastSelectedIndex !== null) {
@@ -296,7 +297,7 @@ export default function AnimalsDataTable({
                                 <React.Fragment key={row.id}>
                                     <tr
                                         onClick={(e) => handleRowClick(row, row.index, e)}
-                                        className={`transition-colors duration-100 ease-in-out
+                                        className={`transition-colors duration-100 ease-in-out select-none
                                             ${row.getIsSelected()
                                                 ? "bg-blue-100 hover:bg-blue-200"
                                                 : "even:bg-gray-50 odd:bg-white hover:bg-gray-100"}`}

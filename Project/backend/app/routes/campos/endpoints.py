@@ -16,8 +16,12 @@ def api_create_campo(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    print(data)
-    if not data.nombre or not data.descripcion or not data.lat or not data.lon:
+    if (
+        not data.nombre
+        or not data.descripcion
+        or data.lat is None
+        or data.lon is None
+    ):
         raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
 
     # Si no existen campos previos, este será el preferido
@@ -25,8 +29,8 @@ def api_create_campo(
     nuevo = Campo(
         nombre=data.nombre,
         descripcion=data.descripcion,
-        lat=float(data.lat),
-        lon=float(data.lon),
+        lat=data.lat,
+        lon=data.lon,
         usuario_id=current_user.id,
         is_preferred=(campos_existentes == 0),
     )
@@ -73,6 +77,13 @@ def api_delete_campo(
     
     if campo.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="No autorizado")
+
+    # Prevent deleting a field that still has parcels assigned
+    if campo.parcelas:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el campo porque tiene parcelas asociadas",
+        )
 
     db.delete(campo)
     db.commit()

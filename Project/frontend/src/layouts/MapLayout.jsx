@@ -22,19 +22,18 @@ export default function MapLayout() {
     useEffect(() => {
         async function init() {
             const data = await fetchMapFeatures();
-            setCampos(data.campos);
-            setParcelas(data.parcelas);
             const defaultCampo = data.campo_preferido_id || Object.keys(data.campos)[0];
             const campoInicial = campoSeleccionado ?? lastCampoId ?? defaultCampo;
 
             if (campoInicial) {
-                setCampoSeleccionado(campoInicial);
-                setFormData(prev => ({ ...prev, campo_id: campoInicial }));
-
                 const campo = data.campos[campoInicial];
                 const map = createBaseMap('map', [campo.lat, campo.lon]);
                 mapRef.current = map;
+                setCampoSeleccionado(campoInicial);
+                setFormData(prev => ({ ...prev, campo_id: campoInicial }));
             }
+            setCampos(data.campos);
+            setParcelas(data.parcelas);
         }
         init();
     }, []);

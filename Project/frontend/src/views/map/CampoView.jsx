@@ -198,6 +198,8 @@ export default function CampoView() {
             limpiarMarcadorGps();
         } catch (err) {
             console.error('Error al eliminar campo:', err);
+            setModalInfoMessage(err.message || 'Error al eliminar campo.');
+            setModalInfoOpen(true);
         }
     };
 

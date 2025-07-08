@@ -17,8 +17,8 @@ class Campo(Base):
 class CampoCreate(BaseModel):
     nombre: str
     descripcion: str
-    lat: str
-    lon: str
+    lat: float
+    lon: float
 
 
 class CampoUpdate(BaseModel):

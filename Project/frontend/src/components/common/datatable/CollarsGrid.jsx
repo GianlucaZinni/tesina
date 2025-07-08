@@ -234,6 +234,7 @@ export default function CollarsGrid({
     }, [table]);
 
     const handleRowClick = (row, index, event) => {
+        event.preventDefault();
         let newSelection = { ...rowSelection };
 
         if (event.shiftKey && lastSelectedIndex !== null) {
@@ -409,7 +410,7 @@ export default function CollarsGrid({
                                     <li
                                         key={collar.id}
                                         className={cn(
-                                            "flex flex-col justify-center p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-150 min-h-[120px] cursor-pointer relative",
+                                            "flex flex-col justify-center p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-150 min-h-[120px] cursor-pointer relative select-none",
                                             isSelected ? "border-blue-500 ring-2 ring-blue-500 bg-blue-50" : "border-gray-200"
                                         )}
                                         onClick={(e) => handleRowClick(row, row.index, e)}

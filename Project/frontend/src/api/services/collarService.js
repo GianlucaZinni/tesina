@@ -40,7 +40,7 @@ export async function deleteCollar(collarId) {
 
 export async function deleteCollarsBatch(ids) {
     const res = await apiFetch('/api/collares/', {
-        method: 'POST',
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids })
     })

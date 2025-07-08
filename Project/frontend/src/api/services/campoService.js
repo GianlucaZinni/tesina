@@ -35,6 +35,9 @@ export async function deleteCampo(id) {
     const res = await apiFetch(`/api/campos/${id}/delete`, {
         method: 'DELETE'
     })
-    if (!res.ok) throw new Error('Error al eliminar el campo')
+    if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.detail || errorData.message || 'Error al eliminar el campo')
+    }
     return await res.json()
 }
