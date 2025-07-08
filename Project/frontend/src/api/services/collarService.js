@@ -119,10 +119,11 @@ export async function downloadCollarTemplate() {
     return res.blob();
 }
 
+
 export async function exportCollars(type, filters) {
     const res = await apiFetch('/api/collares/export', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/csv' },
         body: JSON.stringify({ type, ...filters })
     });
     if (!res.ok) {
@@ -139,7 +140,7 @@ export async function importCollars(file) {
         method: 'POST',
         body: formData
     });
-    if (!res.ok) { 
+    if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Error al importar collares.');
     }

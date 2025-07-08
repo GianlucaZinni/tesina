@@ -52,8 +52,10 @@ def list_available(
     )
     availables = (
         db.query(Collar)
-        .filter(Collar.estado_collar_id == get_estado_id("disponible", db), ~Collar.id.in_(assigned))
-        .all()
+        .filter(
+            Collar.estado_collar_id == get_estado_id("disponible", db),
+            ~Collar.id.in_(assigned),
+        )
     )
     return [
         {
@@ -67,6 +69,7 @@ def list_available(
         }
         for a in availables
     ]
+
 
 @router.get("/", response_model=List[Dict])
 def list_collares(
@@ -108,6 +111,7 @@ def list_collares(
             }
         )
     return result
+
 
 @router.post("/", response_model=Dict, status_code=201)
 def create_collar(
@@ -289,10 +293,16 @@ def batch_delete_collars(
             db.delete(collar)
             deleted += 1
         db.commit()
-        return {"status": "ok", "message": f"Se han eliminado los {deleted} animales seleccionados."}
+        return {
+            "status": "ok",
+            "message": f"Se han eliminado los {deleted} animales seleccionados.",
+        }
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Error interno del servidor al eliminar collares: " + str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno del servidor al eliminar collares: " + str(e),
+        )
 
 
 @router.post("/{collar_id}/assign")
@@ -312,8 +322,13 @@ def handle_assign_collar(
             animal_obj = db.get(Animal, data.animal_id)
             if not animal_obj:
                 raise HTTPException(status_code=404, detail="Animal no encontrado")
-            if animal_obj.parcela and animal_obj.parcela.campo.usuario_id != current_user.id:
-                raise HTTPException(status_code=403, detail="No autorizado para asignar este animal")
+            if (
+                animal_obj.parcela
+                and animal_obj.parcela.campo.usuario_id != current_user.id
+            ):
+                raise HTTPException(
+                    status_code=403, detail="No autorizado para asignar este animal"
+                )
 
         assign_collar(collar, animal_obj, current_user.id, db)
         db.commit()
@@ -346,7 +361,15 @@ def import_collares(
 
     expected_cols = {"codigo", "Codigo", "codigo (Collar)"}
     code_key = next((c for c in (reader.fieldnames or []) if c in expected_cols), None)
-    id_key = next((c for c in (reader.fieldnames or []) if c.lower() in ["id", "numero_identificacion", "numero_identificacion (animal)"]), None)
+    id_key = next(
+        (
+            c
+            for c in (reader.fieldnames or [])
+            if c.lower()
+            in ["id", "numero_identificacion", "numero_identificacion (animal)"]
+        ),
+        None,
+    )
     if not code_key or not id_key:
         raise HTTPException(
             status_code=400,
@@ -355,6 +378,7 @@ def import_collares(
 
     summary = {"total_processed": 0, "created": 0, "updated": 0, "errors": 0}
     errors = []
+    details = []
     row_num = 1  # header row
 
     for row in reader:
@@ -365,7 +389,9 @@ def import_collares(
 
         row_errors = []
         if not codigo:
-            row_errors.append({"field": "Codigo", "value": codigo, "message": "Código requerido"})
+            row_errors.append(
+                {"field": "Codigo", "value": codigo, "message": "Código requerido"}
+            )
             errors.append({"row": row_num, "errors": row_errors})
             summary["errors"] += 1
             continue
@@ -381,23 +407,43 @@ def import_collares(
 
             animal_obj = None
             if numero_identificacion:
-                animal_obj = db.query(Animal).filter_by(numero_identificacion=numero_identificacion).first()
+                animal_obj = (
+                    db.query(Animal)
+                    .filter_by(numero_identificacion=numero_identificacion)
+                    .first()
+                )
                 if not animal_obj:
-                    row_errors.append({"field": "ID", "value": numero_identificacion, "message": "Animal no encontrado"})
+                    row_errors.append(
+                        {
+                            "field": "ID",
+                            "value": numero_identificacion,
+                            "message": "Animal no encontrado",
+                        }
+                    )
                     summary["errors"] += 1
 
             if row_errors:
                 errors.append({"row": row_num, "errors": row_errors})
 
-            assign_collar(
+            messages = []
+            if created_now:
+                messages.append(f"Collar {codigo} creado.")
+
+            changed, assign_msg = assign_collar(
                 collar,
                 animal_obj if animal_obj and not row_errors else None,
                 current_user.id,
                 db,
             )
 
-            if not created_now:
+            if changed and not created_now:
                 summary["updated"] += 1
+
+            if assign_msg:
+                messages.append(assign_msg)
+
+            if messages:
+                details.append({"row": row_num, "message": " ".join(messages)})
 
             db.commit()
         except Exception as e:
@@ -406,10 +452,24 @@ def import_collares(
             errors.append({"row": row_num, "errors": row_errors})
             summary["errors"] += 1
 
-    status = "error" if (summary["created"] == 0 or summary["updated"] == 0) and summary["errors"] >= 1 else "success"
-    message = "Importación completada" if status == "success" else "Importación completada con errores"
-    return {"status": status, "message": message, "summary": summary, "errors": errors}
-
+    if summary["errors"] == 0:
+        status = "success"
+    elif summary["created"] == 0 and summary["updated"] == 0:
+        status = "error"
+    else:
+        status = "success"
+    message = (
+        "Importación completada"
+        if status == "success"
+        else "Importación completada con errores"
+    )
+    return {
+        "status": status,
+        "message": message,
+        "summary": summary,
+        "errors": errors,
+        "details": details,
+    }
 
 @router.post("/export")
 def export_collares(
@@ -424,7 +484,11 @@ def export_collares(
 
     query = (
         db.query(Collar.codigo, Animal.numero_identificacion)
-        .outerjoin(AsignacionCollar, (Collar.id == AsignacionCollar.collar_id) & (AsignacionCollar.fecha_fin.is_(None)))
+        .outerjoin(
+            AsignacionCollar,
+            (Collar.id == AsignacionCollar.collar_id)
+            & (AsignacionCollar.fecha_fin.is_(None)),
+        )
         .outerjoin(Animal, AsignacionCollar.animal_id == Animal.id)
     )
 

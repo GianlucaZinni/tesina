@@ -82,7 +82,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                 icon: <XCircle className="h-4 w-4 text-red-500" />,
             });
             setImportResults({
-                summary: { total_processed: 0, created: 0, updated: 0, errors_count: 1 },
+                summary: { total_processed: 0, created: 0, updated: 0, errors: 1 },
                 errors: [{ row: 'N/A', errors: [{ field: 'Archivo', value: selectedFile?.name, message: error.message }] }]
             });
         } finally {
@@ -171,12 +171,13 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                     {importResults && (
                         <div className="mt-4 p-4 rounded-xl bg-gray-50">
                             <h4 className="font-semibold text-lg mb-2">Resumen de Importación</h4>
-                            <p className="text-sm">Total procesados: {importResults.summary.total_processed}</p>
-                            <p className="text-sm">Creados: {importResults.summary.created}</p>
-                            <p className="text-sm">Actualizados: {importResults.summary.updated}</p>
-                            <p className="text-sm font-semibold">Errores: {importResults.summary.errors_count}</p>
+                            <p className="text-sm font-semibold">Total procesados: {importResults.summary.total_processed}</p>
+                            <p className="text-sm font-semibold">Creados: {importResults.summary.created}</p>
+                            <p className="text-sm font-semibold">Actualizados: {importResults.summary.updated}</p>
+                            <p className="text-sm font-semibold">Errores: {importResults.summary.errors}</p>
+                            <p className="text-sm font-semibold">Detalles: {importResults.details}</p>
 
-                            {importResults.errors_count > 0 && (
+                            {importResults.errors > 0 && (
                                 <div className="mt-4">
                                     <h5 className="font-semibold text-sm text-red-600 mb-2 flex items-center gap-1">
                                         <List className="h-4 w-4" /> Detalles de Errores:
