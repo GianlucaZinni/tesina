@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -81,69 +82,70 @@ def create_new_assignment_logic(collar_id, animal_id, usuario_id, db: Session):
 
 
 def assign_collar(collar, animal_to_assign, current_user_id, db: Session):
-    """Asigna/desasigna un collar gestionando cambios necesarios.
+    """Asigna o desasigna un collar de un animal y devuelve detalles de la operación."""
 
-    Devuelve una tupla ``(changed, message)`` donde ``changed`` indica si se
-    realizaron modificaciones en la base de datos y ``message`` resume lo
-    ocurrido para notificar al usuario.
-    """
+    # 1. Finalizar asignación activa del COLLAR (si este collar ya estaba asignado)
+    current_collar_assignment = db.query(AsignacionCollar).filter_by(
+        collar_id=collar.id, fecha_fin=None
+    ).first()
+    unassigned_from = None
+    if current_collar_assignment:
+        animal_prev = db.get(Animal, current_collar_assignment.animal_id)
+        unassigned_from = animal_prev.nombre if animal_prev else None
+    end_active_assignment(current_collar_assignment, db)
 
-    messages = []
-    changed = False
+    assigned_to = None
+    replaced_collar = None
 
-    # Asignación actualmente activa del collar (si existe)
-    current_assignment = (
-        db.query(AsignacionCollar)
-        .filter_by(collar_id=collar.id, fecha_fin=None)
-        .first()
-    )
-
-    current_animal = (
-        db.get(Animal, current_assignment.animal_id) if current_assignment else None
-    )
-
-    if animal_to_assign is None:
-        # Solicitud de desasignación
-        if current_assignment:
-            end_active_assignment(current_assignment, db)
-            changed = True
-            if current_animal:
-                messages.append(
-                    f"Collar {collar.codigo} desasignado de {current_animal.nombre}, ahora esta disponible."
-                )
-        return changed, " ".join(messages)
-
-    # Si el collar ya está asignado al mismo animal y no hay cambios, no hacer nada
-    if current_assignment and current_assignment.animal_id == animal_to_assign.id:
-        return False, None
-
-    # Si el animal ya tiene otro collar asignado, desasignarlo
-    existing_animal_assignment = (
-        db.query(AsignacionCollar)
-        .filter_by(animal_id=animal_to_assign.id, fecha_fin=None)
-        .first()
-    )
-    if existing_animal_assignment and existing_animal_assignment.collar_id != collar.id:
-        previous_collar = db.get(Collar, existing_animal_assignment.collar_id)
+    # 2. Si hay un animal_to_assign, asignarlo
+    if animal_to_assign:
+        # Finalizar cualquier asignación activa del ANIMAL (si el animal ya tiene otro collar)
+        existing_animal_assignment = db.query(AsignacionCollar).filter_by(
+            animal_id=animal_to_assign.id, fecha_fin=None
+        ).first()
+        if existing_animal_assignment:
+            prev_collar = db.get(Collar, existing_animal_assignment.collar_id)
+            replaced_collar = prev_collar.codigo if prev_collar else None
         end_active_assignment(existing_animal_assignment, db)
-        changed = True
-        if previous_collar:
-            messages.append(
-                f"El collar {previous_collar.codigo} fue desasignado de {animal_to_assign.nombre} y ahora esta disponible."
-            )
 
-    # Si el collar estaba asignado a otro animal, desasignarlo
-    if current_assignment:
-        end_active_assignment(current_assignment, db)
-        changed = True
-        if current_animal and current_animal.id != animal_to_assign.id:
-            messages.append(
-                f"Collar {collar.codigo} fue desasignado de {current_animal.nombre}."
-            )
+        # Crear la nueva asignación
+        create_new_assignment_logic(
+            collar.id, animal_to_assign.id, current_user_id, db
+        )
+        assigned_to = animal_to_assign.nombre
+    else:  # Si animal_to_assign es None, el collar queda desasignado y pasa a disponible
+        if collar.estado_collar_id not in [
+            get_estado_id("sin bateria", db),
+            get_estado_id("defectuoso", db),
+        ]:
+            collar.estado_collar_id = get_estado_id("disponible", db)
+            db.add(collar)
 
-    # Crear la nueva asignación
-    create_new_assignment_logic(collar.id, animal_to_assign.id, current_user_id, db)
-    changed = True
-    messages.insert(0, f"Collar {collar.codigo} asignado a {animal_to_assign.nombre}.")
+    return {
+        "assigned_to": assigned_to,
+        "unassigned_from": unassigned_from,
+        "replaced_collar": replaced_collar,
+    }
 
-    return changed, " ".join(messages)
+def sanitize_and_validate_collar_code(raw_codigo: str):
+    """
+    Limpia y valida el código de collar. Devuelve el código limpio y una lista de errores si los hay.
+    Reglas:
+    - 4 letras en mayúscula, guion, y número de 5 cifras.
+    - Letras se convierten a mayúscula automáticamente.
+    """
+    errores = []
+    raw_codigo = raw_codigo.strip()
+    match = re.match(r"^([a-zA-Z]{1,4})-(\d{1,5})$", raw_codigo)
+    if not match:
+        errores.append({"field": "Codigo", "value": raw_codigo, "message": "Formato inválido. Debe ser AAAA-00001"})
+        return raw_codigo, errores
+
+    letras, numero = match.group(1).upper(), match.group(2).zfill(5)
+    if len(letras) != 4:
+        errores.append({"field": "Codigo", "value": raw_codigo, "message": "El prefijo debe tener exactamente 4 letras mayúsculas"})
+
+    if int(numero) > 99999:
+        errores.append({"field": "Codigo", "value": raw_codigo, "message": "El número debe estar entre 00000 y 99999"})
+
+    return f"{letras}-{numero}", errores

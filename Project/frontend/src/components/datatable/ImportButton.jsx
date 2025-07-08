@@ -24,7 +24,7 @@ export default function ImportButton({ entityType, onImportSuccess }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [importResults, setImportResults] = useState(null); // { summary: {}, errors: [] }
+    const [importResults, setImportResults] = useState(null);
 
     const handleFileChange = (event) => {
         const file = event.target.files ? event.target.files[0] : null;
@@ -82,8 +82,9 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                 icon: <XCircle className="h-4 w-4 text-red-500" />,
             });
             setImportResults({
-                summary: { total_processed: 0, created: 0, updated: 0, errors: 1 },
-                errors: [{ row: 'N/A', errors: [{ field: 'Archivo', value: selectedFile?.name, message: error.message }] }]
+                summary: { total_processed: 0, created: 0, updated: 0, errors_count: 1 },
+                errors: [{ row: 'N/A', errors: [{ field: 'Archivo', value: selectedFile?.name, message: error.message }] }],
+                details: []
             });
         } finally {
             setIsLoading(false);
@@ -174,10 +175,9 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                             <p className="text-sm font-semibold">Total procesados: {importResults.summary.total_processed}</p>
                             <p className="text-sm font-semibold">Creados: {importResults.summary.created}</p>
                             <p className="text-sm font-semibold">Actualizados: {importResults.summary.updated}</p>
-                            <p className="text-sm font-semibold">Errores: {importResults.summary.errors}</p>
-                            <p className="text-sm font-semibold">Detalles: {importResults.details}</p>
+                            <p className="text-sm font-semibold">Errores: {importResults.summary.errors_count}</p>
 
-                            {importResults.errors > 0 && (
+                            {importResults.summary.errors_count > 0 && (
                                 <div className="mt-4">
                                     <h5 className="font-semibold text-sm text-red-600 mb-2 flex items-center gap-1">
                                         <List className="h-4 w-4" /> Detalles de Errores:
@@ -193,6 +193,20 @@ export default function ImportButton({ entityType, onImportSuccess }) {
                                                         </li>
                                                     ))}
                                                 </ul>
+                                            </div>
+                                        ))}
+                                    </ScrollArea>
+                                </div>
+                            )}
+                            {importResults.details && importResults.details.length > 0 && (
+                                <div className="mt-4">
+                                    <h5 className="font-semibold text-sm text-green-700 mb-2 flex items-center gap-1">
+                                        <List className="h-4 w-4" /> Detalles:
+                                    </h5>
+                                    <ScrollArea className="h-40 border rounded-xl p-2 bg-white text-xs text-gray-800">
+                                        {importResults.details.map((msg, idx) => (
+                                            <div key={idx} className="mb-2 border-b pb-1 last:border-b-0">
+                                                {msg}
                                             </div>
                                         ))}
                                     </ScrollArea>

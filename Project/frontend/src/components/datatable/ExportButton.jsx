@@ -32,14 +32,18 @@ export default function ExportButton({ table = null, filename = "data", entityTy
 
     const handleExport = async (type) => {
         let selectedIds = [];
-        if (type === 'selected' && table) {
-            selectedIds = table.getSelectedRowModel().rows.map(row => row.original.id || row.original.animal_id); // Asume 'id' o 'animal_id'
-            if (selectedIds.length === 0) {
-                toast.warning("No hay filas seleccionadas para exportar.", {
-                    description: "Por favor, selecciona al menos una fila.",
-                    icon: <AlertCircle className="h-4 w-4 text-orange-500" />,
-                });
-                return;
+        if (table) {
+            if (type === 'selected') {
+                selectedIds = table.getSelectedRowModel().rows.map(row => row.original.id || row.original.animal_id);
+                if (selectedIds.length === 0) {
+                    toast.warning("No hay filas seleccionadas para exportar.", {
+                        description: "Por favor, selecciona al menos una fila.",
+                        icon: <AlertCircle className="h-4 w-4 text-orange-500" />,
+                    });
+                    return;
+                }
+            } else if (type === 'page') {
+                selectedIds = table.getRowModel().rows.map(row => row.original.id || row.original.animal_id);
             }
         }
 
