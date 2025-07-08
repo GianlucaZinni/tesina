@@ -222,7 +222,7 @@ export default function CampoView() {
         map.on('click', handler);
 
         return () => map.un('click', handler);
-    }, [ready]);
+    }, [ready, campos]);
 
     useEffect(() => {
         if (
@@ -243,7 +243,7 @@ export default function CampoView() {
                 moverMarcadorGps(campo.lon, campo.lat);
             }
         }
-    }, [campoSeleccionado]);
+    }, [campoSeleccionado, campos]);
 
     const handleToggleForm = () => {
         setShowFormCampo(prev => !prev);
