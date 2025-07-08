@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 import csv
 from io import StringIO
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi import UploadFile, File
 from sqlalchemy.orm import Session
 
@@ -332,3 +332,141 @@ def handle_assign_collar(
     except Exception as e:
         db.rollback()
         return {"status": "error", "message": f"Error interno del servidor: {str(e)}"}
+
+
+@router.post("/import")
+def import_collares(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Importar collares desde un archivo CSV."""
+    content = file.file.read().decode("utf-8-sig")
+    reader = csv.DictReader(StringIO(content))
+
+    expected_cols = {"codigo", "Codigo", "codigo (Collar)"}
+    code_key = next((c for c in (reader.fieldnames or []) if c in expected_cols), None)
+    id_key = next((c for c in (reader.fieldnames or []) if c.lower() in ["id", "numero_identificacion", "numero_identificacion (animal)"]), None)
+    if not code_key or not id_key:
+        raise HTTPException(
+            status_code=400,
+            detail="Encabezados CSV inválidos. Se requieren 'Codigo' e 'ID'.",
+        )
+
+    summary = {"total_processed": 0, "created": 0, "updated": 0, "errors": 0}
+    errors = []
+    row_num = 1  # header row
+
+    for row in reader:
+        row_num += 1
+        summary["total_processed"] += 1
+        codigo = (row.get(code_key) or "").strip()
+        numero_identificacion = (row.get(id_key) or "").strip()
+
+        row_errors = []
+        if not codigo:
+            row_errors.append({"field": "Codigo", "value": codigo, "message": "Código requerido"})
+            errors.append({"row": row_num, "errors": row_errors})
+            summary["errors"] += 1
+            continue
+
+        try:
+            collar = None
+            collar = db.query(Collar).filter_by(codigo=codigo).first()
+            created_now = False
+            if not collar:
+                collar = create_new_collar_logic(codigo, db)
+                summary["created"] += 1
+                created_now = True
+
+            animal_obj = None
+            if numero_identificacion:
+                animal_obj = db.query(Animal).filter_by(numero_identificacion=numero_identificacion).first()
+                if not animal_obj:
+                    row_errors.append({"field": "ID", "value": numero_identificacion, "message": "Animal no encontrado"})
+                    summary["errors"] += 1
+
+            if row_errors:
+                errors.append({"row": row_num, "errors": row_errors})
+
+            assign_collar(
+                collar,
+                animal_obj if animal_obj and not row_errors else None,
+                current_user.id,
+                db,
+            )
+
+            if not created_now:
+                summary["updated"] += 1
+
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            row_errors.append({"field": "general", "message": str(e)})
+            errors.append({"row": row_num, "errors": row_errors})
+            summary["errors"] += 1
+
+    status = "error" if (summary["created"] == 0 or summary["updated"] == 0) and summary["errors"] >= 1 else "success"
+    message = "Importación completada" if status == "success" else "Importación completada con errores"
+    return {"status": status, "message": message, "summary": summary, "errors": errors}
+
+
+@router.post("/export")
+def export_collares(
+    payload: Dict,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Exporta collares según filtros y selección."""
+    export_type = payload.get("type", "all")
+    ids = payload.get("ids") or []
+    global_filter = payload.get("globalFilter")
+
+    query = (
+        db.query(Collar.codigo, Animal.numero_identificacion)
+        .outerjoin(AsignacionCollar, (Collar.id == AsignacionCollar.collar_id) & (AsignacionCollar.fecha_fin.is_(None)))
+        .outerjoin(Animal, AsignacionCollar.animal_id == Animal.id)
+    )
+
+    if export_type in {"selected", "page"} and ids:
+        query = query.filter(Collar.id.in_(ids))
+
+    if global_filter:
+        like = f"%{global_filter}%"
+        query = query.filter(
+            (Collar.codigo.ilike(like)) | (Animal.numero_identificacion.ilike(like))
+        )
+
+    rows = query.all()
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Codigo", "ID"])
+    for codigo, ident in rows:
+        writer.writerow([codigo, ident or ""])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=collares.csv"},
+    )
+
+
+@router.get("/export/template")
+def export_template(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Devuelve una plantilla CSV para importar collares."""
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Codigo", "ID"])
+    writer.writerow(["AFGH-00001", "HADS-00001"])
+    writer.writerow(["LTER-00001", ""])
+    writer.writerow(["AFGH-00002", "HADS-00002"])
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=collares_template.csv"},
+    )
+

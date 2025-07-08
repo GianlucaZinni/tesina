@@ -109,6 +109,7 @@ export const handleCollarAssignment = async (collarId, animalId) => { // animalI
     return response.json();
 };
 
+
 export async function downloadCollarTemplate() {
     const res = await apiFetch('/api/collares/export/template');
     if (!res.ok) {
@@ -116,4 +117,31 @@ export async function downloadCollarTemplate() {
         throw new Error(errorData.message || 'Error al descargar la plantilla de collares.');
     }
     return res.blob();
+}
+
+export async function exportCollars(type, filters) {
+    const res = await apiFetch('/api/collares/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, ...filters })
+    });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al exportar collares.');
+    }
+    return res.blob();
+}
+
+export async function importCollars(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiFetch('/api/collares/import', {
+        method: 'POST',
+        body: formData
+    });
+    if (!res.ok) { 
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al importar collares.');
+    }
+    return res.json();
 }
